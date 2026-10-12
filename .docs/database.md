@@ -24,15 +24,33 @@ Image rollback does not undo schema changes or already-applied migrations.
 
 ## Provider and client foundation
 
-`providers` and `clients` each contain a Rails primary key, nullable string
+`providers` and `clients` each contain a Rails primary key, required string
 columns `name` and `email`, and non-null Rails `created_at` and `updated_at`
 timestamps. `Provider` and `Client` inherit directly from `ApplicationRecord`.
 Active Record fills timestamps during ordinary persistence.
 
-Issue #2 requires storage without defining presence, email format, length, or
-uniqueness rules. Both models therefore accept absent and blank values and
-duplicate email addresses. No extra validations, constraints, or indexes are
-introduced without a stated requirement for these two tables.
+Both models validate name/email presence and email syntax using
+`URI::MailTo::EMAIL_REGEXP`. Email uniqueness is case-insensitive within each
+table, backed by a unique expression index on `lower(email)` to protect
+concurrent writes and validation bypasses. SQLite's lowercase comparison covers
+ASCII email addresses accepted by the syntax validator. Names need not be
+unique; a provider and client may use the same email. Input spelling is retained,
+and syntax checks do not establish deliverability or ownership.
+
+The original creation migrations remain unchanged. A later migration checks
+both tables for NULL/blank names or emails, invalid email syntax, and duplicate
+case-insensitive emails before adding any constraints. It raises a generic
+error without logging record values and leaves invalid records untouched.
+Resolve existing invalid data deliberately and retry migration preparation.
+There is no automatic backfill, deduplication, or deletion.
+
+Adding NOT NULL constraints rebuilds SQLite tables and can lock writes. Valid
+IDs, timestamps, stored values, relationships, and foreign keys must survive.
+Coordinate rollout because older application images allowed invalid writes.
+Rollback removes the new email indexes and restores nullable person columns,
+preserving rows and relationships; it does not change application validations.
+The database protects NULL values and duplicate emails. Blank strings and
+email format are checked by model validation, which bulk APIs bypass.
 
 ## Provider-client relationships
 

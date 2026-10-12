@@ -36,10 +36,12 @@ client.provider_client_relationships.pluck(:provider_id, :plan)
 ```
 
 Both models inherit from `ApplicationRecord` and use ordinary Active Record
-persistence. Name and email are nullable strings, with no presence, format,
-length, or uniqueness validation: the assignment requires storing these values,
-but states no restrictions. Duplicate emails, blank values, and missing values
-are accepted. Tables use Rails primary keys and non-null `created_at` and
+persistence. Name and email are required, nonblank strings backed by database
+`NOT NULL` constraints. Emails must match `URI::MailTo::EMAIL_REGEXP` and are
+unique ignoring case within each model, enforced by model validation and a
+database unique index on `lower(email)`. Names can repeat, and a provider and
+client may share an email. Email spelling is preserved; syntax validation does
+not verify delivery or ownership. Tables use Rails primary keys and non-null `created_at` and
 `updated_at` timestamps. Both models expose `provider_client_relationships` and
 their opposite records through that association, returning composable Active
 Record relations. Each pair has one relationship: model validation gives a
@@ -48,6 +50,12 @@ Relationships require existing providers and clients and accept exactly
 `basic` or `premium`; a client's plan belongs to the relationship, so it can
 differ between providers. See [.docs/database.md](.docs/database.md) for schema
 choices.
+
+The person-constraint migration checks existing records first and stops if
+names/emails are missing or blank, emails are malformed, or emails repeat
+ignoring case within a table. Correct those records deliberately before retrying
+`bin/rails db:prepare`; the migration does not fill, rewrite, or delete them.
+See [.docs/database.md](.docs/database.md) for rollout and rollback behavior.
 
 `GET /` deliberately returns HTTP 204 with no body. `GET /health` and `GET /up`
 return HTTP 200 with `{"status":"ok"}` when the database is reachable. Production

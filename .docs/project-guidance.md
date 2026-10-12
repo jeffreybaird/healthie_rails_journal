@@ -25,8 +25,14 @@ Use Rails migrations and Active Record models for:
 - `JournalEntry`: belongs to one client and stores freeform text and timestamps.
 
 Use foreign keys for the associations and a unique database index for the
-provider-client pair. Validate the allowed plan values. Choose other validations
-only when they follow from a stated requirement, and explain the choice.
+provider-client pair. Validate the allowed plan values. Providers and clients
+require nonblank names and emails, with database NOT NULL constraints on both
+fields. Validate email syntax with `URI::MailTo::EMAIL_REGEXP` and enforce
+case-insensitive email uniqueness within each model using model validation and
+a database unique index on `lower(email)`. A provider and client may share an
+email; names are not unique. Preserve stored email spelling rather than silently
+normalizing input. Choose other validations only when they follow from a stated
+requirement, and explain the choice.
 
 ## Required queries
 
@@ -60,6 +66,10 @@ behave with a much larger dataset. Document relevant tradeoffs briefly.
 
 Test the model associations, one relationship per provider-client pair, allowed
 and rejected plan values, journal persistence and all four required queries.
+Test successful person persistence and updates, rejected missing/blank fields,
+invalid email formats, email uniqueness and database constraints. Constraint
+migrations must preserve valid records and relationship links, reject existing
+invalid data without exposing personal data, and support rollback.
 Include shared clients, unrelated records, empty results and entries with equal
 timestamps. Assert the returned records and their ordering, not just counts.
 

@@ -19,14 +19,14 @@ end
 World(ProviderClientRelationshipSteps)
 
 Given("the following relationship providers exist:") do |table|
-  @relationship_providers = table.hashes.to_h do |row|
-    [row.fetch("name"), Provider.create!(name: row.fetch("name"))]
+  @relationship_providers = table.hashes.each_with_index.to_h do |row, index|
+    [row.fetch("name"), Provider.create!(name: row.fetch("name"), email: "provider#{index}@example.test")]
   end
 end
 
 Given("the following relationship clients exist:") do |table|
-  @relationship_clients = table.hashes.to_h do |row|
-    [row.fetch("name"), Client.create!(name: row.fetch("name"))]
+  @relationship_clients = table.hashes.each_with_index.to_h do |row, index|
+    [row.fetch("name"), Client.create!(name: row.fetch("name"), email: "client#{index}@example.test")]
   end
 end
 
