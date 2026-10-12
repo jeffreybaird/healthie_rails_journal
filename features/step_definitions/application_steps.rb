@@ -1,9 +1,7 @@
 # frozen_string_literal: true
 
 When("I request {string} {string}") do |method, path|
-  @http_response = Rack::MockRequest.new(Rails.application).request(
-    method, path, "action_dispatch.show_exceptions" => :all
-  )
+  @http_response = Rack::MockRequest.new(Rails.application).request(method, path)
 end
 
 Then("the HTTP response status is {int}") do |status|

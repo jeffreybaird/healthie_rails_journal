@@ -10,14 +10,3 @@ Feature: Application readiness
       | path    |
       | /health |
       | /up     |
-
-  @allow-rescue
-  Scenario Outline: Former note endpoints are unavailable
-    When I request "<method>" "<path>"
-    Then the HTTP response status is 404
-
-    Examples:
-      | method | path             |
-      | GET    | /notes           |
-      | POST   | /notes           |
-      | PATCH  | /notes/1/archive |

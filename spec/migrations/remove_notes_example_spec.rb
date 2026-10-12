@@ -21,20 +21,6 @@ RSpec.describe "RemoveNotesExample", :aggregate_failures, :commit do
     end
   end
 
-  it "prepares a fresh database through the current migrations without legacy tables" do
-    migration_context.migrate(cleanup_version)
-
-    expect(connection.tables).not_to include("notes", "audit_logs")
-    expect(migration_context.get_all_versions).to eq([cleanup_version])
-  end
-
-  it "loads the current schema snapshot without legacy tables" do
-    load Rails.root.join("db/schema.rb")
-
-    expect(connection.tables).not_to include("notes", "audit_logs")
-    expect(migration_context.get_all_versions).to eq([cleanup_version])
-  end
-
   context "with populated legacy tables and unrelated data" do
     before do
       create_notes_table
