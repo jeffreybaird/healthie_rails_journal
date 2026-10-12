@@ -6,7 +6,6 @@ gem "puma", "~> 7.2.1"
 gem "rails", "~> 8.1.4"
 gem "sqlite3", "~> 2.6"
 # Security floors also override vulnerable Ruby default-gem versions.
-gem "dry-monads", "~> 1.11"
 gem "erb", ">= 6.0.4"
 gem "rails-html-sanitizer", ">= 1.7.1"
 gem "resolv", "~> 0.3.2"

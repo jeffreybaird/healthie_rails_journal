@@ -1,16 +1,23 @@
 # Architecture decisions
 
-The fresh Rails scaffold demonstrates these conventions with Notes. Add domain
-features only when required; optional guides do not install infrastructure.
+The application is a small Rails foundation for the provider/client/journal
+assignment. Add domain features only when required; optional guides do not
+install infrastructure. The generated Notes runtime has been removed. Historical
+tables remain to preserve existing data and deployment compatibility; see
+[database.md](database.md).
+
+The root endpoint deliberately returns HTTP 204 with no body. Readiness endpoints
+check database connectivity and return a small JSON response. No replacement
+product interface, mutation service or event publisher is installed.
 
 ## Domain operations and results
 
-Group operations by domain under `app/services/notes/`. `Notes::Create.call(attrs:)`
-returns `Success(note)` or `Failure([:validation, errors])`; archive returns
-`Success(note)` or `Failure([:not_found])`. Expected failures are explicit values,
-not booleans or exception-driven branching. Handle every tag at the HTTP boundary
-and test its successful and failed behavior. Unexpected database or programming
-errors propagate; do not disguise them as validation failures.
+Use direct Active Record models and relations for the assignment. Introduce
+domain operations only when behavior needs orchestration. Expected failures in
+such operations are explicit `Failure([:tag, details])` values. Handle every tag
+at the HTTP boundary and test successful and rejected behavior. Unexpected
+database or programming errors propagate; do not disguise them as validation
+failures. Add a Result library only when an operation actually needs it.
 
 Models own validation, associations and named query scopes. Controllers whitelist
 parameters, call operations and translate results into redirects, status codes
@@ -18,12 +25,13 @@ and locals. Views render locals; they do not query or authorize records.
 
 ## Durable mutations and observations
 
-Create and archive write an `AuditLog` in the same Active Record transaction as
-the note. Its `event`, `record_id` and `created_at` contain no note content.
-An audit failure must roll back the mutation. Add actor identifiers only when
-real authentication exists; never invent an actor or log sensitive field values.
+No audit model or audit writer is currently installed. If a future operation
+requires durable audit records, write them in the same Active Record transaction
+as the mutation. An audit failure must roll back the mutation. Add actor
+identifiers only when real authentication exists; never invent an actor or log
+sensitive field values.
 
-Publish `notes.created` and `notes.archived` with only `note_id` through
+If notifications are introduced, publish identifiers only through
 `ActiveSupport::Notifications` in `ActiveRecord.after_all_transactions_commit`.
 This waits for the outer transaction and emits nothing on rollback. Notifications
 are synchronous, in-process and non-durable. A subscriber exception occurs after
@@ -35,14 +43,13 @@ commit-to-delivery crash window and cannot guarantee delivery.
 
 ## Recoverability and bounded reads
 
-`Note.kept` excludes `archived_at` rows explicitly. Archive preserves content;
-missing or previously archived IDs return `Failure([:not_found])`. Do not add a
-global `default_scope`. Recovery and retention/erasure operations must be
-intentional and separately authorized when authentication is introduced.
+Use explicit named scopes rather than a global `default_scope` for any future
+archive visibility. Recovery and retention/erasure operations must be intentional
+and separately authorized when authentication is introduced.
 
-`Notes::List.call(page: 1, per_page: 25)` returns `items`, `page`, `per_page`,
-and `total`. Clamp page to at least one and page size to 1–100. Use stable
-`created_at, id` ordering; never load unbounded collections to paginate in Ruby.
+Journal history will use `created_at` descending, then `id` descending, with
+composable Active Record relations. If pagination is introduced, validate its
+bounds and paginate in SQL rather than loading unbounded collections in Ruby.
 
 When introducing tenants, pass a resolved scope explicitly to operations;
 scoping determines visible records and policies determine permitted actions.
