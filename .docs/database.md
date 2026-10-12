@@ -32,8 +32,30 @@ Active Record fills timestamps during ordinary persistence.
 Issue #2 requires storage without defining presence, email format, length, or
 uniqueness rules. Both models therefore accept absent and blank values and
 duplicate email addresses. No extra validations, constraints, or indexes are
-introduced without a stated requirement. Provider/client relationships and
-plans belong to the next issue.
+introduced without a stated requirement for these two tables.
+
+## Provider-client relationships
+
+`provider_client_relationships` stores required `provider_id`, `client_id`, and
+string `plan` columns plus Rails timestamps. Foreign keys require existing
+providers and clients. A unique index on `(provider_id, client_id)` enforces one
+relationship per pair and supports fetching relationships by provider. A
+separate index on `client_id` supports the reverse lookup. An additional
+provider-only index would duplicate the composite index's leading column.
+
+Both parent models use `has_many :through` to expose the other side. The join
+model validates association presence, pair uniqueness, and inclusion of `plan`
+in exactly `basic` and `premium`. Plans are stored per relationship, allowing
+one client to have different plans with different providers. No plan default
+silently chooses a tier. The database requires a non-null plan; permitted plan
+values are checked by ordinary model validation. Bulk APIs bypass that
+validation and should not be used for unvalidated plan input.
+
+The relationship migration is additive and reversible. Existing provider and
+client rows are preserved. Rolling it back drops relationships and their plan
+data; application image rollback should normally retain the added table.
+Foreign keys prevent deleting a parent with relationships. No cascading
+deletion or automatic relationship cleanup is introduced without a requirement.
 
 The creation migrations are additive and reversible. Applying them to a fresh
 database creates both tables; repeating migration preparation preserves records.
