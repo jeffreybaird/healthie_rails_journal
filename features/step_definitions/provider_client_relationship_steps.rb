@@ -82,3 +82,20 @@ Then("client {string} has exactly these providers:") do |client_name, table|
 
   expect(@relationship_clients.fetch(client_name).providers).to contain_exactly(*expected_providers)
 end
+
+When("I filter provider {string} clients to these names in descending name order:") do |provider_name, table|
+  names = table.hashes.map { |row| row.fetch("name") }
+  @client_query = @relationship_providers.fetch(provider_name).clients.where(name: names).order(name: :desc)
+end
+
+Then("the client query returns an Active Record relation with exactly these clients in order:") do |table|
+  expected_clients = table.hashes.map { |row| @relationship_clients.fetch(row.fetch("name")) }
+
+  expect(@client_query).to be_a(ActiveRecord::Relation)
+  expect(@client_query).to eq(expected_clients)
+end
+
+Then("the client query returns an empty Active Record relation") do
+  expect(@client_query).to be_a(ActiveRecord::Relation)
+  expect(@client_query).to be_empty
+end
