@@ -207,22 +207,6 @@ def record_finish(folder, snapshot_path, marker, platform='claude'):
     (folder / 'done' / snapshot_path.name).write_text(json.dumps({**marker, 'ended': time.time()}))
     snapshot_path.unlink(missing_ok=True)
 
-
-def text_of_blob(root, blob):
-    return '' if blob is None else git(root, 'cat-file', 'blob', blob).stdout.decode('utf-8')
-
-
-def describe_diff(root, path, before, change, contents):
-    try:
-        old, new = text_of_blob(root, before), contents.decode('utf-8') if contents is not None else ''
-    except UnicodeDecodeError:
-        return {'binary': True}
-    lines = list(difflib.unified_diff(old.splitlines(), new.splitlines(),
-                                      'a/' + path if before else '/dev/null',
-                                      'b/' + path if change != 'deleted' else '/dev/null', lineterm=''))
-    return {'diff': '\n'.join(lines[:MAX_DIFF_LINES]), 'diff_truncated': len(lines) > MAX_DIFF_LINES}
-
-
 def owner_accepts(category, role):
     return role == ('spec_writer' if category == 'test' else 'implementer')
 
@@ -245,7 +229,6 @@ def file_changes(root, snapshot, policy, role):
         change = 'added' if before is None else 'deleted' if after is None else 'modified'
         category = guard.classification(root / path, root, policy)
         record = {'path': path, 'change': change, 'class': category, 'owner_ok': owner_accepts(category, role)}
-        record.update(describe_diff(root, path, before, change, contents))
         changes.append(record)
     return head_after, changes
 
