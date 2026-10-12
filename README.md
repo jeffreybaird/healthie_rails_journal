@@ -5,15 +5,70 @@ Record, SQLite and Puma. `Provider` and `Client` each store a name, email addres
 and Rails timestamps. `ProviderClientRelationship` connects them and stores a
 client's `basic` or `premium` plan with each provider. `JournalEntry` stores each
 client's freeform journal text. Client journal history is ordered newest first.
-Provider-wide history uses the same ordering. Sample seed data is not implemented yet.
+Provider-wide history uses the same ordering. Synthetic seed data demonstrates
+membership boundaries and stable ordering across all four required queries.
 
 ```sh
 bundle install
 bin/rails db:prepare
+bin/rails db:seed
 bin/rails console
 bin/rails server -b 0.0.0.0 -p 4000
 bin/check
 ```
+
+Run `bin/rails db:seed` against your local development database. Check your
+environment and database configuration first; the command writes to the selected
+database. Loading the small dataset creates two providers, four clients, four
+relationships and eight journal entries on an empty database. All names, emails
+and journal text are fictional. The reserved sample records are:
+
+| Record | Email | Relationships |
+| --- | --- | --- |
+| Alex Sample (provider) | seed-alex@example.test | Sam: basic; Taylor: premium |
+| Jordan Sample (provider) | seed-jordan@example.test | Sam: premium; Riley: basic |
+| Sam Sample (client) | seed-sam@example.test | Shared by Alex and Jordan |
+| Taylor Sample (client) | seed-taylor@example.test | Alex only |
+| Riley Sample (client) | seed-riley@example.test | Jordan only |
+| Unrelated Sample (client) | seed-unrelated@example.test | No providers |
+
+Repeat loads add missing sample records without deleting or resetting existing
+data. People are matched by email ignoring case, preserving stored spelling and
+names. Relationships are matched by provider/client and keep any edited plan.
+Journal entries are matched by client, content and creation date. Editing those
+entry fields can cause the original sample entry to be added again; the edited
+entry remains. Loads run in one transaction, so a failed load rolls back its
+changes. Run seeds sequentially. The exact results below describe a fresh,
+unedited dataset; existing relationships or entries can add to query results.
+
+These console examples read the seeded records without creating more data:
+
+```ruby
+alex = Provider.find_by!(email: "seed-alex@example.test")
+sam = Client.find_by!(email: "seed-sam@example.test")
+
+alex.clients.order(:name, :id).pluck(:name)
+# => ["Sam Sample", "Taylor Sample"]
+
+sam.providers.order(:name, :id).pluck(:name)
+# => ["Alex Sample", "Jordan Sample"]
+
+labels = ->(entries) { entries.pluck(:content).map { |text| text.split(":", 2).first.delete_prefix("Synthetic seed entry ") } }
+labels.call(sam.journal_entries.recent_first)
+# => ["sam-tie-second", "sam-tie-first", "sam-middle", "sam-oldest"]
+
+labels.call(alex.journal_entries.recent_first)
+# => ["taylor-newest", "sam-tie-second", "sam-tie-first", "taylor-tie", "sam-middle", "sam-oldest"]
+```
+
+Entry content is `Synthetic seed entry LABEL: a fictional reflection for query
+practice.` Dates are explicit UTC timestamps at midnight in January 2026:
+`taylor-newest` on the 20th, `sam-oldest` on the 5th, `taylor-tie`,
+`sam-tie-first` and `sam-tie-second` on the 15th, and `sam-middle` on the 10th.
+`riley-newest` is on the 25th and `unrelated-newest` on the 30th; both are
+excluded from Alex's history despite being newer. Seeds create `taylor-tie`,
+then `sam-tie-first`, then `sam-tie-second`, making the tied entries' descending
+IDs visible in the examples.
 
 In the Rails console, create and retrieve synthetic records:
 
