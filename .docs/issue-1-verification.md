@@ -4,6 +4,12 @@ The generated Notes runtime is removed. The root returns an empty HTTP 204;
 `/health` and `/up` retain their database readiness response. No provider/client/
 journal models or replacement interface are introduced by this cleanup.
 
+This document records the initial runtime-removal commit `3dac04c`. Its table
+preservation decision was superseded by the user's subsequent request to remove
+the creation migration and production tables. See
+[issue-1-schema-removal-verification.md](issue-1-schema-removal-verification.md)
+for the follow-up's final schema behavior and verification.
+
 ## Dead-code review and approved test removals
 
 Reviewed routes, application constants, services, configuration, framework entry
@@ -44,7 +50,7 @@ observed the test writer's edits; `db:prepare` generated `db/schema.rb` as a
 framework side effect. The implementer reviewed and adopted that schema, applying
 only safe formatting. No unauthorized direct source/test edits were identified.
 
-## Database safety
+## Initial database safety (superseded by authorized table removal)
 
 Original migration `20261008000000_create_notes.rb` is unchanged (SHA-256
 `d4e10de3ddff296f1736d7d23026b71dddb3924bd37b10d76dc2e45364374f28`).

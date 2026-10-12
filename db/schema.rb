@@ -12,19 +12,6 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 20_261_008_000_000) do
-  create_table "audit_logs", force: :cascade do |t|
-    t.string "event", null: false
-    t.integer "record_id", null: false
-    t.datetime "created_at", null: false
-    t.index %w[record_id created_at], name: "index_audit_logs_on_record_id_and_created_at"
-  end
-
-  create_table "notes", force: :cascade do |t|
-    t.string "title", null: false
-    t.datetime "archived_at"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index %w[archived_at created_at id], name: "index_notes_on_archived_at_and_created_at_and_id"
-  end
+ActiveRecord::Schema[8.1].define(version: 20_261_012_000_000) do
+  # No application tables remain after retiring the generated Notes example.
 end

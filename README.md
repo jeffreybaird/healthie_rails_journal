@@ -24,12 +24,12 @@ Add background jobs or extra databases deliberately, with corresponding
 deployment and backup changes. See `AGENTS.md` and `.docs/`.
 
 The generated Notes interface, models, services and routes have been retired.
-The original `20261008000000_create_notes.rb` migration is retained unchanged:
-fresh setup creates its legacy `notes` and `audit_logs` tables, and existing
-databases retain all rows. There are no application consumers of these tables.
-Deployment state is unknown, so this cleanup does not rewrite migration history
-or discard persisted data. Any later table removal requires a deliberate backup,
-retention and rollout plan; see [.docs/database.md](.docs/database.md).
+The original creation migration is removed. The cleanup migration drops legacy
+`notes` and `audit_logs` tables and their data when `db:prepare` runs, including
+production deployment. This removal is explicitly authorized; fresh databases
+do not create these tables. The migration cannot restore deleted data, and older
+Notes-enabled application images are incompatible with the resulting schema.
+See [.docs/database.md](.docs/database.md) for rollout and rollback details.
 
 `bin/check` prepares the test database, runs RuboCop, RSpec and strict Cucumber,
 then enforces 100% line and branch coverage across all application and library

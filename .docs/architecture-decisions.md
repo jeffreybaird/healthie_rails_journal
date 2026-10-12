@@ -2,8 +2,9 @@
 
 The application is a small Rails foundation for the provider/client/journal
 assignment. Add domain features only when required; optional guides do not
-install infrastructure. The generated Notes runtime has been removed. Historical
-tables remain to preserve existing data and deployment compatibility; see
+install infrastructure. The generated Notes runtime and creation migration have
+been removed. An explicitly authorized cleanup migration removes legacy tables
+and their data from existing databases; see
 [database.md](database.md).
 
 The root endpoint deliberately returns HTTP 204 with no body. Readiness endpoints

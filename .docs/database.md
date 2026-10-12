@@ -24,19 +24,24 @@ Image rollback does not undo schema changes or already-applied migrations.
 
 ## Retired example data
 
-The generated Notes runtime is removed, but its original migration
-`db/migrate/20261008000000_create_notes.rb` stays unchanged. Its application in
-deployed databases cannot be ruled out. Fresh preparation still creates `notes`
-and `audit_logs`; existing preparation leaves their schema and rows intact.
-Neither table has an application model or runtime consumer in this release.
-Keeping the tables also lets a previous application image run during rollout
-or rollback without a destructive schema change.
+The generated Notes runtime and original creation migration
+`db/migrate/20261008000000_create_notes.rb` are removed. At the user's explicit
+request, `20261012000000_remove_notes_example.rb` drops `notes` and `audit_logs`,
+including all their rows. This applies to production when deployment runs
+`db:prepare`. No live production cleanup was performed while preparing this PR.
 
-Do not delete local or deployed databases to perform this cleanup. Physical table
-retirement is separate work: establish deployment state, back up and verify the
-data, decide retention/export requirements, and wait until older images no longer
-need the schema before considering a removal migration. This release performs
-no automatic erasure or export of persisted content.
+Fresh databases never create these tables. Existing databases apply the cleanup
+migration; either missing table is harmless. Other tables and existing migration
+history are left intact. Do not delete an entire database to perform cleanup.
+
+The cleanup is intentionally irreversible: migration rollback raises
+`ActiveRecord::IrreversibleMigration`, and image rollback cannot restore erased
+data. Any recovery of old content requires a verified backup. A Notes-enabled
+image cannot serve against the cleaned schema, including during a mixed-version
+rollout. Deploy the runtime-removal commit `3dac04c` before applying this schema
+cleanup if production still serves Notes; that commit is also the earliest
+compatible application rollback target. This is an explicitly authorized
+exception to the normal additive migration convention.
 
 Keep local test data isolated. `bin/check` forces `RAILS_ENV=test` and clears
 inherited `DATABASE_PATH`, `DATABASE_URL` and `PRIMARY_DATABASE_URL` before any database command. Never

@@ -24,6 +24,14 @@ Keep schema changes additive and compatible. Failed migration blocks the swap
 but does not undo applied changes. Rollback repins an older image; it does not
 undo database migrations. Shared Caddy routing and health determine availability.
 
+The Notes table cleanup migration is an explicitly authorized destructive
+exception: `db:prepare` drops legacy `notes` and `audit_logs`, including their
+rows. Deploy runtime-removal commit `3dac04c` first if a Notes-enabled image is
+still serving; older Notes images are incompatible during rollout or rollback.
+Rollback to `3dac04c` or a later compatible image does not recover erased data.
+The migration's down direction raises `ActiveRecord::IrreversibleMigration`.
+See [database.md](database.md) for schema and recovery details.
+
 An existing app needs Gemfile, .ruby-version, config/application.rb,
 config/environment.rb, config/database.yml, config/puma.rb and config.ru.
 Generation preserves its application source. Bootstrap refreshes Dockerfile,
