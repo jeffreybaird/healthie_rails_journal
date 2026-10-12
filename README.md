@@ -77,6 +77,46 @@ empty_provider.clients.where(id: shared_client.id).order(:name, :id).to_a
 # => []
 ```
 
+To query all providers for a client, use `client.providers`. It returns a
+composable Active Record relation containing providers from both `basic` and
+`premium` relationships, including providers shared with another client and
+excluding unrelated providers. Results have no default order; add an explicit
+order when displaying them.
+
+This independent example uses synthetic records and unique email suffixes so
+it can be run repeatedly. Prepare the test database and open a sandbox console;
+the sandbox rolls back the example records when you exit:
+
+```sh
+env -u DATABASE_URL -u DATABASE_PATH -u PRIMARY_DATABASE_URL RAILS_ENV=test bin/rails db:prepare
+env -u DATABASE_URL -u DATABASE_PATH -u PRIMARY_DATABASE_URL bin/rails console --environment=test --sandbox
+```
+
+```ruby
+suffix = SecureRandom.hex(8)
+query_client = Client.create!(name: "Avery Provider Query Example", email: "avery-providers-#{suffix}@example.test")
+other_client = Client.create!(name: "Blair Provider Query Example", email: "blair-providers-#{suffix}@example.test")
+empty_client = Client.create!(name: "Casey Provider Query Example", email: "casey-providers-#{suffix}@example.test")
+first_provider = Provider.create!(name: "Morgan Provider Query Example", email: "morgan-providers-#{suffix}@example.test")
+shared_provider = Provider.create!(name: "Taylor Provider Query Example", email: "taylor-providers-#{suffix}@example.test")
+unrelated_provider = Provider.create!(name: "Jordan Provider Query Example", email: "jordan-providers-#{suffix}@example.test")
+
+query_client.provider_client_relationships.create!(provider: first_provider, plan: "basic")
+query_client.provider_client_relationships.create!(provider: shared_provider, plan: "premium")
+other_client.provider_client_relationships.create!(provider: shared_provider, plan: "basic")
+other_client.provider_client_relationships.create!(provider: unrelated_provider, plan: "premium")
+
+all_providers = query_client.providers
+all_providers.order(:name, :id).pluck(:name)
+# => ["Morgan Provider Query Example", "Taylor Provider Query Example"]
+
+all_providers.where(id: [shared_provider.id, unrelated_provider.id]).order(:name, :id).pluck(:name)
+# => ["Taylor Provider Query Example"]
+
+empty_client.providers.where(id: shared_provider.id).order(:name, :id).to_a
+# => []
+```
+
 The unique relationship index on `(provider_id, client_id)` supports finding a
 provider's clients and prevents duplicate pairs. Its leading `provider_id`
 column makes a separate provider-only index redundant; the `client_id` index
