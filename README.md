@@ -5,7 +5,7 @@ Record, SQLite and Puma. `Provider` and `Client` each store a name, email addres
 and Rails timestamps. `ProviderClientRelationship` connects them and stores a
 client's `basic` or `premium` plan with each provider. `JournalEntry` stores each
 client's freeform journal text. Client journal history is ordered newest first.
-Provider-wide journal queries and sample seed data are not implemented yet.
+Provider-wide history uses the same ordering. Sample seed data is not implemented yet.
 
 ```sh
 bundle install
@@ -153,6 +153,58 @@ The existing `(client_id, created_at, id)` journal index supports this scoped
 ordering, including reverse traversal for descending history. Large histories
 can use SQL filters and limits without loading every entry; inspect query plans
 before adding indexes for further access patterns.
+
+To retrieve journal entries across a provider's clients, use
+`provider.journal_entries.recent_first`. It returns a composable Active Record
+relation with global `created_at DESC, id DESC` ordering across both plans.
+Shared clients appear once, unrelated clients remain outside the query, and
+providers with no clients or no client entries return an empty relation.
+Provider membership scopes data; it does not establish authorization.
+
+Run this independent example in the test sandbox console shown above:
+
+```ruby
+suffix = SecureRandom.hex(8)
+history_provider = Provider.create!(name: "Morgan History Example", email: "morgan-history-#{suffix}@example.test")
+other_provider = Provider.create!(name: "Taylor History Example", email: "taylor-history-#{suffix}@example.test")
+empty_provider = Provider.create!(name: "Jordan History Example", email: "jordan-history-#{suffix}@example.test")
+first_client = Client.create!(name: "Avery History Example", email: "avery-provider-history-#{suffix}@example.test")
+shared_client = Client.create!(name: "Blair History Example", email: "blair-provider-history-#{suffix}@example.test")
+unrelated_client = Client.create!(name: "Casey History Example", email: "casey-provider-history-#{suffix}@example.test")
+
+history_provider.provider_client_relationships.create!(client: first_client, plan: "basic")
+history_provider.provider_client_relationships.create!(client: shared_client, plan: "premium")
+other_provider.provider_client_relationships.create!(client: shared_client, plan: "basic")
+other_provider.provider_client_relationships.create!(client: unrelated_client, plan: "premium")
+
+timestamp = Time.utc(2026, 1, 15, 12)
+content = "Synthetic journal content for demonstrating ordered provider history."
+newer = first_client.journal_entries.create!(content: content, created_at: timestamp)
+older = shared_client.journal_entries.create!(content: content, created_at: timestamp - 1.day)
+tied = shared_client.journal_entries.create!(content: content, created_at: timestamp)
+unrelated = unrelated_client.journal_entries.create!(content: content, created_at: timestamp + 1.day)
+
+history = history_provider.journal_entries.recent_first
+history.pluck(:id)
+# => [tied.id, newer.id, older.id]
+
+history.where(id: [older.id, tied.id, unrelated.id]).limit(1).pluck(:id)
+# => [tied.id]
+
+empty_provider.journal_entries.recent_first.to_a
+# => []
+```
+
+The association joins through clients and provider-client relationships in SQL;
+it does not load a client ID array or run a query for each client. The unique
+`(provider_id, client_id)` relationship index supports membership lookup and
+prevents duplicate pairs, so sharing a client with another provider does not
+duplicate entries. The `(client_id, created_at, id)` journal index supports
+finding each client's entries. The existing `(created_at, id)` journal index
+also offers a global ordered scan, with provider membership then filtered by
+the joins. The database chooses its plan based on selectivity; ordering the
+combined history may still require a sort across clients. Use SQL filters and
+limits and inspect query plans as data grows before adding indexes.
 
 The unique relationship index on `(provider_id, client_id)` supports finding a
 provider's clients and prevents duplicate pairs. Its leading `provider_id`
