@@ -1,0 +1,17 @@
+default: &default
+  adapter: sqlite3
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS", 5) %>
+  timeout: 5000
+  pragmas:
+    journal_mode: WAL
+    foreign_keys: ON
+
+development:
+  <<: *default
+  database: <%= ENV.fetch("DATABASE_PATH", "db/development.sqlite3").to_json %>
+test:
+  <<: *default
+  database: <%= ENV.fetch("DATABASE_PATH", "db/test.sqlite3").to_json %>
+production:
+  <<: *default
+  database: <%= ENV.fetch("DATABASE_PATH", "/data/app.db").to_json %>

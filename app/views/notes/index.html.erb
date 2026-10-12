@@ -1,0 +1,38 @@
+<h1>Notes</h1>
+<p>Keep a short list. Archive a note when you are done.</p>
+<%= form_with model: note, url: notes_path, local: true do |form| %>
+  <% if errors.any? %>
+    <div id="title-errors" role="alert" data-testid="error-state">
+      <% errors.each do |field, messages| %>
+        <% messages.each do |message| %>
+          <p><%= field.to_s.humanize %> <%= message %></p>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+  <%= form.label :title, "Title" %>
+  <%= form.text_field :title, aria: { invalid: errors.any?, describedby: ("title-errors" if errors.any?) } %>
+  <%= form.submit "Save note", data: { testid: "save-note" } %>
+<% end %>
+<section aria-label="Saved notes" data-testid="note-list">
+  <% if listing[:items].empty? %>
+    <p data-testid="empty-state">No notes here. Save a note to get started.</p>
+  <% else %>
+    <ul>
+      <% listing[:items].each do |item| %>
+        <li data-testid="note">
+          <span><%= item.title %></span>
+          <%= button_to "Archive note", archive_note_path(item), method: :patch, data: { testid: "archive-note" } %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</section>
+<nav aria-label="Notes pages">
+  <% if listing[:page] > 1 %>
+    <%= link_to "Previous page", notes_path(page: listing[:page] - 1) %>
+  <% end %>
+  <% if listing[:page] * listing[:per_page] < listing[:total] %>
+    <%= link_to "Next page", notes_path(page: listing[:page] + 1) %>
+  <% end %>
+</nav>

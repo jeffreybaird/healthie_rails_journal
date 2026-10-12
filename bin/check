@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+export RAILS_ENV=test
+unset DATABASE_PATH DATABASE_URL PRIMARY_DATABASE_URL
+rm -rf coverage
+bundle exec rails db:prepare
+bundle exec rubocop
+bundle exec rspec
+bundle exec cucumber --strict
+bundle exec ruby script/coverage.rb
+bundle exec bundler-audit check --update

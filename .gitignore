@@ -1,0 +1,13 @@
+/.bundle
+/vendor/bundle
+/coverage
+/.env
+/.env.*
+!/.env.example
+/db/*.sqlite3*
+/storage/*.sqlite3*
+/log/*
+/tmp/*
+/config/master.key
+/config/credentials/*.key
+/.agent-diagnostics/

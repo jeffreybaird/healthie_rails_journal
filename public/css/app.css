@@ -1,0 +1,33 @@
+/* Semantic tokens are the single source of design values. */
+:root {
+  --surface: #ffffff;
+  --background: #f4f6fa;
+  --text: #162237;
+  --muted: #44546c;
+  --accent: #1747a6;
+  --accent-text: #ffffff;
+  --error: #a32020;
+  --border: #60718c;
+  --focus: #7538ad;
+  --space: 1rem;
+  --radius: 0.4rem;
+  --font-body: system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; padding: var(--space); background: var(--background); color: var(--text); font: 1rem/1.6 var(--font-body); }
+main { max-width: 46rem; margin: 2rem auto; padding: 2rem; background: var(--surface); border-radius: var(--radius); }
+a { color: var(--accent); }
+label { display: block; font-weight: 600; }
+input[type="text"] { display: block; width: 100%; margin-block: 0.5rem var(--space); padding: 0.65rem; border: 1px solid var(--border); border-radius: var(--radius); font: inherit; }
+button, input[type="submit"] { min-height: 44px; min-width: 44px; padding: 0.6rem var(--space); border: 0; border-radius: var(--radius); color: var(--accent-text); background: var(--accent); font: inherit; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+[role="alert"] { color: var(--error); }
+ul { list-style: none; padding: 0; }
+li { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space); padding-block: var(--space); border-bottom: 1px solid var(--border); }
+li span { overflow-wrap: anywhere; }
+nav { display: flex; gap: var(--space); }
+nav a { display: inline-block; padding-block: 0.7rem; min-height: 44px; }
+.skip-link { position: absolute; left: -10000px; }
+.skip-link:focus { position: static; }
+@media (max-width: 35rem) { main { margin-block: 0; padding: var(--space); } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto; animation: none; transition: none; } }

@@ -1,0 +1,171 @@
+{
+  "app_type": "service",
+  "files": {
+    ".claude/agents/workflow-implementer.md": "971948a213686ba721ef5c94087a10958c8984d7e909da9f53c15ea1e6701a45",
+    ".claude/agents/workflow-orchestrator.md": "0501578f72d6c994e4e561498c0a429bd0e0ebe16da0ee42b91996ec1a47184f",
+    ".claude/agents/workflow-reviewer.md": "36f9493babca9290f524ccfe4688efb1a79c9a51b42ff7e443c3c41b42789f45",
+    ".claude/agents/workflow-runner.md": "c6d02f1023b5c307199ca697f4a48aaeae7057db6c1ba606107307ee5c3dea31",
+    ".claude/agents/workflow-spec-writer.md": "6c635dfbe1ce50bfbdd46aee1d4aa75c9db6cc0a45e3d2e9b63e696c554a447d",
+    ".claude/hooks/policy.json": "a047d31056de44971f4509782f3dbe2701bb7e8df871264eb02d55cbaa6c8534",
+    ".claude/hooks/workflow_audit.py": "6bece732788a03cff27e0b5416c70d40b393efda959ae8d4fa63f06679c1df07",
+    ".claude/hooks/workflow_guard.py": "65994a7959d9cfd06a7ba5114706fcae8316914cd8b1e950aafd529b1a747807",
+    ".claude/settings.json": "dc6f283ece9fb5daff71c56d322910d8def1eab0531430c07f6ed0cae3bf78bf",
+    ".codex/agents/workflow_implementer.toml": "256d8da394bba8d8461f3d3c81007bce27784bfb2a81dfcff012bbe06bcef804",
+    ".codex/agents/workflow_orchestrator.toml": "2f92cbb8e235aadf987db5dd7661f7cb4071fccfdc2d57ac88113da160de8908",
+    ".codex/agents/workflow_reviewer.toml": "bda0aa118c9f59c40c4ad246b13eb03d92ba0a47a38915294b0fa34b5b34f972",
+    ".codex/agents/workflow_runner.toml": "45c0d964987416822070843551360c7630f5c20f9caf38b7848f18d28eb64a02",
+    ".codex/agents/workflow_spec_writer.toml": "fefea48906f986383d428498afc44f2534758ca4bfd5947764a3de9c604dc287",
+    ".codex/config.toml": "833f696460f50ed15147686f0fcff0c7c8e5270472c044e5e2db69aeddae7d2a",
+    ".codex/hooks.json": "054f9d3a79e2296fdf47ca2b65d9c0e7f5592fa25641f413ec95a68f7ee4f7b0",
+    ".codex/hooks/hook_diagnostics.py": "65f6352b57f49e202946299b0ae8fc4fc138ea3f406a693fd65ae3325df919c3",
+    ".codex/hooks/policy.json": "a047d31056de44971f4509782f3dbe2701bb7e8df871264eb02d55cbaa6c8534",
+    ".codex/hooks/workflow-manifest.json": "0297cf4f18ef726cc3e9a0572348a04578b72b11efd570d3254def173245b537",
+    ".codex/hooks/workflow_audit.py": "6bece732788a03cff27e0b5416c70d40b393efda959ae8d4fa63f06679c1df07",
+    ".codex/hooks/workflow_guard.py": "65994a7959d9cfd06a7ba5114706fcae8316914cd8b1e950aafd529b1a747807",
+    ".docs/a11y-audit.md": "a2b9439e95a31a93e19ed5fa67bc13f99cfd621d1a80414a858dd04a5a5757e2",
+    ".docs/agent-workflow.md": "bd7283007de3f5ede5052c4d545656ce38ee4a1ebd5b2647830809e8d7a56858",
+    ".docs/architecture-decisions.md": "c26944c4e60234d4ab02e0d475fccb887b2a2e0896d6b7579123fd7012445252",
+    ".docs/database.md": "6cb82d99dd177a8f82ceb5acee088625c1fccc84903f75afb8f19ab7770288eb",
+    ".docs/deployment.md": "fe0cec44fa24817e795a2ff181c50fe7dbbcb533b59765bcd91b16f63a4e0e2e",
+    ".docs/design-system.md": "599131f79e5f5784681621cf1f3e62a0238360bd415e1a6359ddc7521be7ebba",
+    ".docs/external-service-integration.md": "0e8ffc08cd1a742ebd4307fb02b8e4a3fca3bddda0470aef134830691a0daf7d",
+    ".docs/frontend-map.md": "2e43e0dceb183e54b41dbc83dd46720dae0a0dc756491058fd341f87ae552849",
+    ".docs/hook-diagnostics.md": "920fc41ab7eb1d23241b75cfb7453c0e4cafb8aab7686aedee026f88be358f7a",
+    ".docs/multi-tenancy.md": "bad00839e8595cf3b910d9e65b24a0fbc9d14bd38869f90343628834fdc3b4e7",
+    ".docs/object-storage-integration.md": "37175b33b32d6faa673ee26ba37d409f8277a10fe808a267f08d48c6522effb5",
+    ".docs/observability.md": "badf5d101faa32463d0d7358d50a469b455df76936df1825a486c45c0ed8616e",
+    ".docs/payment-integration.md": "98b2c85da2d2f9d1f140a4e8cc067d0877b7b52b354e0b9710ee1fae2b0dfe09",
+    ".docs/rbac.md": "2d215530576ab40eee7c6508463479cf5d4ae6e7447d2ce863a3dd397f04750b",
+    ".docs/scalability.md": "5291f3bc5fdc07b9c0cda20297b6cd686649f5d96ae7dfa5bf7602317c1311ca",
+    ".docs/separation-of-concerns.md": "92e90416d827f786d028dc2f700b644c3b517fa51ab6de5bcfd0068702860894",
+    ".docs/testing.md": "2314eff88da7d8f72f3b16d51653653a442e7f006e8b8d0ecb140cf2b502b66e",
+    ".docs/theming.md": "a48e690c8f0bc256e222615da243d4821a4e454ee087c1e57f7f4c3817d8307e",
+    ".gitattributes": "2d989683e692720406585d20a6dce708fb3d00eed3068be8936cca35bfe1e2d2",
+    ".gitignore": "522b2ddbd14b8e74035c8212ce36389ee2ec63e93be141a54a253db9548b3c02",
+    "AGENTS.md": "85139dc3c375268fb74a709b209ebcf291a6fd5919cb0f624b143b9cd68f0eaa",
+    "CLAUDE.md": "85139dc3c375268fb74a709b209ebcf291a6fd5919cb0f624b143b9cd68f0eaa"
+  },
+  "framework": "rails",
+  "installer": {
+    "source_commit": "6d9f311669391cc36310e172c9c9ea0490954699356e925284b88767f5a316e0",
+    "version": "0.5.2"
+  },
+  "names": {
+    "app": "healthie_rails_journal",
+    "module": "HealthieRailsJournal"
+  },
+  "owned_hooks": {
+    ".claude/settings.json": {
+      "PostToolUse": [
+        {
+          "hooks": [
+            {
+              "command": "python3 -B \"$CLAUDE_PROJECT_DIR/.claude/hooks/workflow_audit.py\" --root \"$CLAUDE_PROJECT_DIR\" --policy \"$CLAUDE_PROJECT_DIR/.claude/hooks/policy.json\"",
+              "timeout": 10,
+              "type": "command"
+            }
+          ],
+          "matcher": "Bash|Write|Edit|NotebookEdit"
+        }
+      ],
+      "PostToolUseFailure": [
+        {
+          "hooks": [
+            {
+              "command": "python3 -B \"$CLAUDE_PROJECT_DIR/.claude/hooks/workflow_audit.py\" --root \"$CLAUDE_PROJECT_DIR\" --policy \"$CLAUDE_PROJECT_DIR/.claude/hooks/policy.json\"",
+              "timeout": 10,
+              "type": "command"
+            }
+          ],
+          "matcher": "Bash|Write|Edit|NotebookEdit"
+        }
+      ],
+      "PreToolUse": [
+        {
+          "hooks": [
+            {
+              "command": "python3 -B \"$CLAUDE_PROJECT_DIR/.claude/hooks/workflow_guard.py\" --platform claude --root \"$CLAUDE_PROJECT_DIR\" --policy \"$CLAUDE_PROJECT_DIR/.claude/hooks/policy.json\"",
+              "timeout": 5,
+              "type": "command"
+            }
+          ],
+          "matcher": "Write|Edit|NotebookEdit"
+        },
+        {
+          "hooks": [
+            {
+              "command": "python3 -B \"$CLAUDE_PROJECT_DIR/.claude/hooks/workflow_audit.py\" --root \"$CLAUDE_PROJECT_DIR\" --policy \"$CLAUDE_PROJECT_DIR/.claude/hooks/policy.json\"",
+              "timeout": 10,
+              "type": "command"
+            }
+          ],
+          "matcher": "Bash|Write|Edit|NotebookEdit"
+        }
+      ]
+    },
+    ".codex/hooks.json": {
+      "PostToolUse": [
+        {
+          "hooks": [
+            {
+              "command": "python3 -B \"$(git rev-parse --show-toplevel)/.codex/hooks/hook_diagnostics.py\" --hook workflow_audit --event PostToolUse --root \"$(git rev-parse --show-toplevel)\" -- python3 -B \"$(git rev-parse --show-toplevel)/.codex/hooks/workflow_audit.py\" --platform codex --root \"$(git rev-parse --show-toplevel)\" --policy \"$(git rev-parse --show-toplevel)/.codex/hooks/policy.json\"",
+              "timeout": 10,
+              "type": "command"
+            }
+          ],
+          "matcher": "^(Bash|apply_patch)$"
+        }
+      ],
+      "PreToolUse": [
+        {
+          "hooks": [
+            {
+              "command": "python3 -B \"$(git rev-parse --show-toplevel)/.codex/hooks/hook_diagnostics.py\" --hook workflow_guard --event PreToolUse --root \"$(git rev-parse --show-toplevel)\" -- python3 -B \"$(git rev-parse --show-toplevel)/.codex/hooks/workflow_guard.py\" --platform codex --root \"$(git rev-parse --show-toplevel)\" --policy \"$(git rev-parse --show-toplevel)/.codex/hooks/policy.json\"",
+              "timeout": 5,
+              "type": "command"
+            }
+          ],
+          "matcher": ".*"
+        },
+        {
+          "hooks": [
+            {
+              "command": "python3 -B \"$(git rev-parse --show-toplevel)/.codex/hooks/hook_diagnostics.py\" --hook workflow_audit --event PreToolUse --root \"$(git rev-parse --show-toplevel)\" -- python3 -B \"$(git rev-parse --show-toplevel)/.codex/hooks/workflow_audit.py\" --platform codex --root \"$(git rev-parse --show-toplevel)\" --policy \"$(git rev-parse --show-toplevel)/.codex/hooks/policy.json\"",
+              "timeout": 10,
+              "type": "command"
+            }
+          ],
+          "matcher": "^(Bash|apply_patch)$"
+        }
+      ]
+    }
+  },
+  "schema_version": 1,
+  "selection": {
+    "hook": "",
+    "no_setup": false,
+    "skip_agents": [],
+    "skip_modules": []
+  },
+  "template_files": [
+    ".docs/a11y-audit.md",
+    ".docs/architecture-decisions.md",
+    ".docs/database.md",
+    ".docs/deployment.md",
+    ".docs/design-system.md",
+    ".docs/external-service-integration.md",
+    ".docs/frontend-map.md",
+    ".docs/multi-tenancy.md",
+    ".docs/object-storage-integration.md",
+    ".docs/observability.md",
+    ".docs/payment-integration.md",
+    ".docs/rbac.md",
+    ".docs/scalability.md",
+    ".docs/separation-of-concerns.md",
+    ".docs/testing.md",
+    ".docs/theming.md",
+    "AGENTS.md",
+    "CLAUDE.md"
+  ],
+  "template_hooks": {}
+}
