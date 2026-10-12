@@ -4,8 +4,8 @@ A Rails foundation for the provider/client/journal assignment, using Active
 Record, SQLite and Puma. `Provider` and `Client` each store a name, email address,
 and Rails timestamps. `ProviderClientRelationship` connects them and stores a
 client's `basic` or `premium` plan with each provider. `JournalEntry` stores each
-client's freeform journal text. Ordered journal queries and sample seed data are
-not implemented yet.
+client's freeform journal text. Client journal history is ordered newest first.
+Provider-wide journal queries and sample seed data are not implemented yet.
 
 ```sh
 bundle install
@@ -116,6 +116,43 @@ all_providers.where(id: [shared_provider.id, unrelated_provider.id]).order(:name
 empty_client.providers.where(id: shared_provider.id).order(:name, :id).to_a
 # => []
 ```
+
+To retrieve a client's journal history, use `client.journal_entries.recent_first`.
+It returns a composable Active Record relation ordered by `created_at DESC, id
+DESC`. Equal timestamps put the entry with the higher ID first. Filtering and
+limiting stay in SQL and retain the client boundary; a client with no entries
+returns an empty relation.
+
+Run this independent example in the test sandbox console shown above:
+
+```ruby
+suffix = SecureRandom.hex(8)
+history_client = Client.create!(name: "Avery History Example", email: "avery-history-#{suffix}@example.test")
+other_client = Client.create!(name: "Blair History Example", email: "blair-history-#{suffix}@example.test")
+empty_client = Client.create!(name: "Casey History Example", email: "casey-history-#{suffix}@example.test")
+timestamp = Time.utc(2026, 1, 15, 12)
+content = "Synthetic journal content for demonstrating ordered client history."
+
+newer = history_client.journal_entries.create!(content: content, created_at: timestamp)
+older = history_client.journal_entries.create!(content: content, created_at: timestamp - 1.day)
+tied = history_client.journal_entries.create!(content: content, created_at: timestamp)
+unrelated = other_client.journal_entries.create!(content: content, created_at: timestamp + 1.day)
+
+history = history_client.journal_entries.recent_first
+history.pluck(:id)
+# => [tied.id, newer.id, older.id]
+
+history.where(id: [older.id, tied.id, unrelated.id]).limit(1).pluck(:id)
+# => [tied.id]
+
+empty_client.journal_entries.recent_first.to_a
+# => []
+```
+
+The existing `(client_id, created_at, id)` journal index supports this scoped
+ordering, including reverse traversal for descending history. Large histories
+can use SQL filters and limits without loading every entry; inspect query plans
+before adding indexes for further access patterns.
 
 The unique relationship index on `(provider_id, client_id)` supports finding a
 provider's clients and prevents duplicate pairs. Its leading `provider_id`
