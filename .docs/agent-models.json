@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "codex": {
+    "roles": {
+      "spec_writer": {
+        "model": "gpt-6.1-sol",
+        "model_reasoning_effort": "high"
+      },
+      "implementer": {
+        "model": "gpt-6.1-sol",
+        "model_reasoning_effort": "high"
+      },
+      "runner": {
+        "model": "gpt-6-luna",
+        "model_reasoning_effort": "medium"
+      },
+      "reviewer": {
+        "model": "gpt-6-astra",
+        "model_reasoning_effort": "medium"
+      },
+      "orchestrator": {
+        "model": "gpt-6.1-sol",
+        "model_reasoning_effort": "medium"
+      }
+    }
+  }
+}

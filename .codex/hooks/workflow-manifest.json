@@ -15,7 +15,7 @@
     ".claude/settings.json": "4a5fb7e3ae21b1937277c756943280bd319b79854d895257dd2fde06fb982f44",
     ".codex/agents/workflow_implementer.toml": "256d8da394bba8d8461f3d3c81007bce27784bfb2a81dfcff012bbe06bcef804",
     ".codex/agents/workflow_orchestrator.toml": "2f92cbb8e235aadf987db5dd7661f7cb4071fccfdc2d57ac88113da160de8908",
-    ".codex/agents/workflow_reviewer.toml": "bda0aa118c9f59c40c4ad246b13eb03d92ba0a47a38915294b0fa34b5b34f972",
+    ".codex/agents/workflow_reviewer.toml": "2d5a80bcf56ad8abaac613440f595f14852d3b3810945afc1b8d8a34b79f5dc4",
     ".codex/agents/workflow_runner.toml": "45c0d964987416822070843551360c7630f5c20f9caf38b7848f18d28eb64a02",
     ".codex/agents/workflow_spec_writer.toml": "fefea48906f986383d428498afc44f2534758ca4bfd5947764a3de9c604dc287",
     ".codex/config.toml": "48ad6a21fc22f83dee228c346601ad47486da4062d40069853f38b55ffdac5b7",
