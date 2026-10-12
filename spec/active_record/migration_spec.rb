@@ -7,7 +7,7 @@ require "sqlite3"
 require "tmpdir"
 
 RSpec.describe ActiveRecord::Migration do
-  it "creates both tables from an empty database with nullable strings and required timestamps", :aggregate_failures do
+  it "creates both tables from an empty database with required person details and timestamps", :aggregate_failures do
     with_migrated_database do |database|
       %w[providers clients].each { |table| expect_person_table(database, table) }
     end
@@ -44,11 +44,18 @@ RSpec.describe ActiveRecord::Migration do
   def expect_person_table(database, table)
     expect(database.table_info(table)).to include(
       a_hash_including("name" => "id", "type" => "integer", "pk" => 1),
-      a_hash_including("name" => "name", "type" => "varchar", "notnull" => 0),
-      a_hash_including("name" => "email", "type" => "varchar", "notnull" => 0),
+      a_hash_including("name" => "name", "type" => "varchar", "notnull" => 1),
+      a_hash_including("name" => "email", "type" => "varchar", "notnull" => 1),
       a_hash_including("name" => "created_at", "type" => a_string_starting_with("datetime"), "notnull" => 1),
       a_hash_including("name" => "updated_at", "type" => a_string_starting_with("datetime"), "notnull" => 1)
     )
+    expect_person_email_index(database, table)
+  end
+
+  def expect_person_email_index(database, table)
+    indexes = database.execute("SELECT sql FROM sqlite_master WHERE tbl_name = ? AND type = 'index'", [table]).flatten
+
+    expect(indexes).to include(a_string_matching(/CREATE UNIQUE INDEX.*lower\(\s*"?email"?\s*\)/i))
   end
 
   def expect_relationship_schema(database)
