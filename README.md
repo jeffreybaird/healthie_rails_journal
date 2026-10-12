@@ -44,6 +44,46 @@ client.journal_entries
 # => relation containing the client's entries
 ```
 
+To query all clients for a provider, use `provider.clients`. It returns a
+composable Active Record relation, including clients shared with another
+provider and excluding clients without a relationship to this provider. Results
+have no default order; add an explicit order when displaying them.
+
+This independent Rails console example uses synthetic records and unique email
+suffixes so it can be run repeatedly:
+
+```ruby
+suffix = SecureRandom.hex(8)
+query_provider = Provider.create!(name: "Morgan Query Example", email: "morgan-query-#{suffix}@example.test")
+other_provider = Provider.create!(name: "Taylor Query Example", email: "taylor-query-#{suffix}@example.test")
+empty_provider = Provider.create!(name: "Jordan Query Example", email: "jordan-query-#{suffix}@example.test")
+first_client = Client.create!(name: "Avery Query Example", email: "avery-query-#{suffix}@example.test")
+shared_client = Client.create!(name: "Blair Query Example", email: "blair-query-#{suffix}@example.test")
+unrelated_client = Client.create!(name: "Casey Query Example", email: "casey-query-#{suffix}@example.test")
+
+query_provider.provider_client_relationships.create!(client: first_client, plan: "basic")
+query_provider.provider_client_relationships.create!(client: shared_client, plan: "premium")
+other_provider.provider_client_relationships.create!(client: shared_client, plan: "basic")
+other_provider.provider_client_relationships.create!(client: unrelated_client, plan: "premium")
+
+all_clients = query_provider.clients
+all_clients.order(:name, :id).pluck(:name)
+# => ["Avery Query Example", "Blair Query Example"]
+
+all_clients.where(id: [shared_client.id, unrelated_client.id]).order(:name, :id).pluck(:name)
+# => ["Blair Query Example"]
+
+empty_provider.clients.where(id: shared_client.id).order(:name, :id).to_a
+# => []
+```
+
+The unique relationship index on `(provider_id, client_id)` supports finding a
+provider's clients and prevents duplicate pairs. Its leading `provider_id`
+column makes a separate provider-only index redundant; the `client_id` index
+supports the reverse query. For larger datasets, inspect query plans before
+adding indexes for particular filters or ordering: each additional index uses
+storage and adds work to writes.
+
 Both models inherit from `ApplicationRecord` and use ordinary Active Record
 persistence. Name and email are required, nonblank strings backed by database
 `NOT NULL` constraints. Emails must match `URI::MailTo::EMAIL_REGEXP` and are
