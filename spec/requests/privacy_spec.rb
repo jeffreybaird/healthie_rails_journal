@@ -28,9 +28,11 @@ RSpec.describe "Request parameter privacy", type: :request do
     expect(filtered.fetch("page")).to eq("2")
   end
 
-  it "preserves the original title for application persistence" do
+  it "filters a copy without changing the application's original parameters" do
+    original_parameters = parameters.deep_dup
+
     parameter_filter.filter(parameters)
-    post "/notes", params: parameters.slice("note")
-    expect(Note.last.title).to eq("Confidential release plan")
+
+    expect(parameters).to eq(original_parameters)
   end
 end
