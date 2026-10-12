@@ -1,8 +1,9 @@
 # Healthie Rails Journal
 
 A Rails foundation for the provider/client/journal assignment, using Active
-Record, SQLite and Puma. The assignment's models, queries and sample data are
-not implemented yet.
+Record, SQLite and Puma. `Provider` and `Client` each store a name, email address,
+and Rails timestamps. Relationships, plans, journal entries, required queries,
+and sample data are not implemented yet.
 
 ```sh
 bundle install
@@ -11,6 +12,25 @@ bin/rails console
 bin/rails server -b 0.0.0.0 -p 4000
 bin/check
 ```
+
+In the Rails console, create and retrieve synthetic records:
+
+```ruby
+provider = Provider.create!(name: "Morgan Example", email: "morgan@example.test")
+client = Client.create!(name: "Alex Example", email: "alex@example.test")
+Provider.find(provider.id).attributes.slice("name", "email")
+# => {"name" => "Morgan Example", "email" => "morgan@example.test"}
+Client.find(client.id).attributes.slice("name", "email")
+# => {"name" => "Alex Example", "email" => "alex@example.test"}
+```
+
+Both models inherit from `ApplicationRecord` and use ordinary Active Record
+persistence. Name and email are nullable strings, with no presence, format,
+length, or uniqueness validation: the assignment requires storing these values,
+but states no restrictions. Duplicate emails, blank values, and missing values
+are accepted. Tables use Rails primary keys and non-null `created_at` and
+`updated_at` timestamps. No additional indexes or associations are needed for
+this step. See [.docs/database.md](.docs/database.md) for schema choices.
 
 `GET /` deliberately returns HTTP 204 with no body. `GET /health` and `GET /up`
 return HTTP 200 with `{"status":"ok"}` when the database is reachable. Production
