@@ -1,27 +1,53 @@
 # Healthie Rails Journal
 
-A Rails foundation for the provider/client/journal assignment, using Active
-Record, SQLite and Puma. `Provider` and `Client` each store a name, email address,
-and Rails timestamps. `ProviderClientRelationship` connects them and stores a
-client's `basic` or `premium` plan with each provider. `JournalEntry` stores each
-client's freeform journal text. Client journal history is ordered newest first.
-Provider-wide history uses the same ordering. Synthetic seed data demonstrates
-membership boundaries and stable ordering across all four required queries.
+A small Rails 8.1 application for a provider/client/journal pairing interview.
+It uses ordinary Active Record associations, SQLite and Puma. The models, four
+required queries and synthetic sample data are implemented; the console is the
+interface for this exercise.
+
+## Run locally
+
+Prerequisites:
+
+- Ruby **3.3.12** (see `.ruby-version`) and Bundler. Activate that Ruby with your
+  version manager; the macOS system Ruby is insufficient.
+- Git and native gem build tools (for example, Xcode Command Line Tools on macOS,
+  or a compiler, `pkg-config` and SQLite development headers on Linux).
+- Docker CLI with the Compose plugin for deployment regression specs in
+  `bin/check`. Those specs inspect configuration without a running Docker daemon.
+
+From the repository root, in a local terminal:
 
 ```sh
+ruby --version # should report 3.3.12
+export RAILS_ENV=development
+unset DATABASE_URL PRIMARY_DATABASE_URL DATABASE_PATH
 bundle install
 bin/rails db:prepare
 bin/rails db:seed
 bin/rails console
-bin/rails server -b 0.0.0.0 -p 4000
-bin/check
 ```
 
-Run `bin/rails db:seed` against your local development database. Check your
-environment and database configuration first; the command writes to the selected
-database. Loading the small dataset creates two providers, four clients, four
-relationships and eight journal entries on an empty database. All names, emails
-and journal text are fictional. The reserved sample records are:
+Exit the console with `exit`, then start the server:
+
+```sh
+bin/rails server -b 127.0.0.1 -p 4000
+```
+
+Visit <http://127.0.0.1:4000/health> or `/up`: both return HTTP 200 with
+`{"status":"ok"}` when the database is reachable. `/` deliberately returns
+HTTP 204 with no body. Stop the server with Ctrl-C. There is no journal web UI.
+
+Development uses `db/development.sqlite3`. `db:prepare` creates or migrates the
+database and loads seeds on initial creation; the explicit `db:seed` also works
+on an existing database. SQLite uses WAL, foreign keys and a five-second busy
+timeout. `DATABASE_PATH` can select another local file; `DATABASE_URL` can
+override the connection, so the setup above clears inherited overrides.
+
+## Sample records
+
+On an empty database, seeds create two providers, four clients, four
+relationships and eight journal entries. Everything is fictional.
 
 | Record | Email | Relationships |
 | --- | --- | --- |
@@ -32,297 +58,157 @@ and journal text are fictional. The reserved sample records are:
 | Riley Sample (client) | seed-riley@example.test | Jordan only |
 | Unrelated Sample (client) | seed-unrelated@example.test | No providers |
 
-Repeat loads add missing sample records without deleting or resetting existing
-data. People are matched by email ignoring case, preserving stored spelling and
-names. Relationships are matched by provider/client and keep any edited plan.
-Journal entries are matched by client, content and creation date. Editing those
-entry fields can cause the original sample entry to be added again; the edited
-entry remains. Loads run in one transaction, so a failed load rolls back its
-changes. Run seeds sequentially. The exact results below describe a fresh,
-unedited dataset; existing relationships or entries can add to query results.
+Repeat seed loads preserve existing records and edits. People are matched by
+email ignoring case; relationships by provider/client; entries by client,
+content and creation date. Editing those entry fields can cause the original
+sample entry to be added again alongside the edited entry. Seeds run in one
+transaction; run loads sequentially. The results below assume fresh, unedited
+sample data.
 
-These console examples read the seeded records without creating more data:
+## Four console queries
+
+Paste this block into `bin/rails console` after setup:
 
 ```ruby
 alex = Provider.find_by!(email: "seed-alex@example.test")
 sam = Client.find_by!(email: "seed-sam@example.test")
 
-alex.clients.order(:name, :id).pluck(:name)
+# 1. All clients for a provider (no default membership order).
+clients = alex.clients
+clients.order(:name, :id).pluck(:name)
 # => ["Sam Sample", "Taylor Sample"]
 
-sam.providers.order(:name, :id).pluck(:name)
+# 2. All providers for a client (both plans included).
+providers = sam.providers
+providers.order(:name, :id).pluck(:name)
 # => ["Alex Sample", "Jordan Sample"]
 
-labels = ->(entries) { entries.pluck(:content).map { |text| text.split(":", 2).first.delete_prefix("Synthetic seed entry ") } }
-labels.call(sam.journal_entries.recent_first)
+# Display only the labels from the fictional seed text.
+labels = lambda do |entries|
+  entries.pluck(:content).map do |text|
+    text.split(":", 2).first.delete_prefix("Synthetic seed entry ")
+  end
+end
+
+# 3. All journal entries for a client, newest first.
+client_history = sam.journal_entries.recent_first
+labels.call(client_history)
 # => ["sam-tie-second", "sam-tie-first", "sam-middle", "sam-oldest"]
 
-labels.call(alex.journal_entries.recent_first)
+# 4. All journal entries across a provider's clients, newest first.
+provider_history = alex.journal_entries.recent_first
+labels.call(provider_history)
 # => ["taylor-newest", "sam-tie-second", "sam-tie-first", "taylor-tie", "sam-middle", "sam-oldest"]
-```
 
-Entry content is `Synthetic seed entry LABEL: a fictional reflection for query
-practice.` Dates are explicit UTC timestamps at midnight in January 2026:
-`taylor-newest` on the 20th, `sam-oldest` on the 5th, `taylor-tie`,
-`sam-tie-first` and `sam-tie-second` on the 15th, and `sam-middle` on the 10th.
-`riley-newest` is on the 25th and `unrelated-newest` on the 30th; both are
-excluded from Alex's history despite being newer. Seeds create `taylor-tie`,
-then `sam-tie-first`, then `sam-tie-second`, making the tied entries' descending
-IDs visible in the examples.
+# Compose another SQL query without losing membership or ordering.
+labels.call(provider_history.where(client_id: sam.id).limit(2))
+# => ["sam-tie-second", "sam-tie-first"]
 
-In the Rails console, create and retrieve synthetic records:
-
-```ruby
-provider = Provider.create!(name: "Morgan Example", email: "morgan@example.test")
-client = Client.create!(name: "Alex Example", email: "alex@example.test")
-Provider.find(provider.id).attributes.slice("name", "email")
-# => {"name" => "Morgan Example", "email" => "morgan@example.test"}
-Client.find(client.id).attributes.slice("name", "email")
-# => {"name" => "Alex Example", "email" => "alex@example.test"}
-ProviderClientRelationship.create!(provider: provider, client: client, plan: "basic")
-provider.clients
-# => relation containing Alex Example
-client.providers
-# => relation containing Morgan Example
-
-second_provider = Provider.create!(name: "Taylor Example", email: "taylor@example.test")
-second_provider.provider_client_relationships.create!(client: client, plan: "premium")
-client.provider_client_relationships.pluck(:provider_id, :plan)
-# => the two provider IDs with "basic" and "premium", respectively
-
-entry = client.journal_entries.create!(
-  content: "A synthetic journal entry for this example.\nA second line is preserved exactly."
-)
-entry.reload.content
-# => "A synthetic journal entry for this example.\nA second line is preserved exactly."
-client.journal_entries
-# => relation containing the client's entries
-```
-
-To query all clients for a provider, use `provider.clients`. It returns a
-composable Active Record relation, including clients shared with another
-provider and excluding clients without a relationship to this provider. Results
-have no default order; add an explicit order when displaying them.
-
-This independent Rails console example uses synthetic records and unique email
-suffixes so it can be run repeatedly:
-
-```ruby
-suffix = SecureRandom.hex(8)
-query_provider = Provider.create!(name: "Morgan Query Example", email: "morgan-query-#{suffix}@example.test")
-other_provider = Provider.create!(name: "Taylor Query Example", email: "taylor-query-#{suffix}@example.test")
-empty_provider = Provider.create!(name: "Jordan Query Example", email: "jordan-query-#{suffix}@example.test")
-first_client = Client.create!(name: "Avery Query Example", email: "avery-query-#{suffix}@example.test")
-shared_client = Client.create!(name: "Blair Query Example", email: "blair-query-#{suffix}@example.test")
-unrelated_client = Client.create!(name: "Casey Query Example", email: "casey-query-#{suffix}@example.test")
-
-query_provider.provider_client_relationships.create!(client: first_client, plan: "basic")
-query_provider.provider_client_relationships.create!(client: shared_client, plan: "premium")
-other_provider.provider_client_relationships.create!(client: shared_client, plan: "basic")
-other_provider.provider_client_relationships.create!(client: unrelated_client, plan: "premium")
-
-all_clients = query_provider.clients
-all_clients.order(:name, :id).pluck(:name)
-# => ["Avery Query Example", "Blair Query Example"]
-
-all_clients.where(id: [shared_client.id, unrelated_client.id]).order(:name, :id).pluck(:name)
-# => ["Blair Query Example"]
-
-empty_provider.clients.where(id: shared_client.id).order(:name, :id).to_a
+Client.find_by!(email: "seed-unrelated@example.test").providers.to_a
 # => []
 ```
 
-To query all providers for a client, use `client.providers`. It returns a
-composable Active Record relation containing providers from both `basic` and
-`premium` relationships, including providers shared with another client and
-excluding unrelated providers. Results have no default order; add an explicit
-order when displaying them.
+Both histories use **`created_at DESC, id DESC`**, globally across clients for
+the provider query. Higher IDs break equal timestamp ties. Seeds insert
+`taylor-tie`, `sam-tie-first`, then `sam-tie-second` at midnight UTC on January
+15, 2026. Other entries occur on January 5, 10 and 20; Riley's January 25 and
+Unrelated's January 30 entries stay outside Alex's history despite being newer.
+A shared client's entries appear once per provider query.
 
-This independent example uses synthetic records and unique email suffixes so
-it can be run repeatedly. Prepare the test database and open a sandbox console;
-the sandbox rolls back the example records when you exit:
+The associations and `recent_first` return composable `ActiveRecord::Relation`
+objects. `where`, `order` and `limit` build SQL; `pluck` and `to_a` execute it
+and produce arrays. The provider history joins through relationships and clients
+rather than loading client IDs or querying once per client. Empty associations
+return empty relations. Membership scopes data; it does not authorize a caller.
+
+## Schema, validations and indexes
+
+All four tables have Rails primary keys and `created_at`/`updated_at` timestamps.
+
+| Model | Stored data and relationships | Validation and database protection |
+| --- | --- | --- |
+| `Provider` | Name, email; many clients through relationships; many journal entries through clients | Name/email presence; email syntax and case-insensitive uniqueness within providers; `NOT NULL` columns and unique `lower(email)` index |
+| `Client` | Name, email; many providers through relationships; many journal entries | Same person validations and constraints, with uniqueness within clients |
+| `ProviderClientRelationship` | One provider, one client, and that client's plan with that provider | Existing participants required; exactly `basic` or `premium`; unique pair validation; non-null columns, foreign keys and unique `(provider_id, client_id)` index |
+| `JournalEntry` | One client, freeform `content` in a text column | Existing client and nonblank content of at least 50 characters; non-null columns and client foreign key |
+
+The plan belongs to the relationship because Sam can have `basic` with Alex
+and `premium` with Jordan. There is no default plan. The unique pair index
+also prevents duplicate relationships under concurrent writes. Foreign keys
+prevent orphan records and parent deletion while dependent records exist;
+there is no automatic cascading deletion.
+
+Name/email presence and email syntax keep person records usable. Names may
+repeat, and a provider and client may share an email. Email spelling is preserved;
+`URI::MailTo::EMAIL_REGEXP` checks syntax, not ownership or deliverability.
+The journal's 50-character minimum follows the assignment; whitespace-only text
+is rejected, multiline text is preserved, and no maximum or normalization is
+imposed. Model validations provide useful errors; database constraints protect
+integrity even under races. Bulk writes bypass model checks for blank strings,
+email syntax, plan values and content length.
+
+The person-constraint migration stops on existing invalid or duplicate data
+without rewriting it. Correct that data deliberately before retrying
+`db:prepare`; see [.docs/database.md](.docs/database.md).
+
+- Unique `(provider_id, client_id)` supports a provider's membership lookup;
+  its leading column makes another provider-only index redundant. The separate
+  `client_id` relationship index supports the reverse lookup.
+- `(client_id, created_at, id)` on journal entries supports client history,
+  including reverse scans for descending order, and client foreign-key lookup.
+- `(created_at, id)` on journal entries offers a global ordered scan. Provider
+  history also needs membership joins; the planner may choose client lookups
+  followed by a sort instead, depending on selectivity.
+- Unique `lower(email)` indexes enforce case-insensitive person uniqueness
+  within each table, including concurrent writes.
+
+At larger scale, inspect `relation.explain` and representative query plans
+before adding indexes: each index costs storage and write work. Bound results
+with SQL filters/limits; a future pagination interface can use `(created_at, id)`
+as a stable cursor rather than large offsets. Use `includes` when iterating
+records and reading associated people to avoid N+1 queries. SQLite allows one
+writer at a time, so keep transactions short and measure contention. Pagination
+and additional indexes are considerations here, not implemented features.
+
+## Verify and extend
 
 ```sh
-env -u DATABASE_URL -u DATABASE_PATH -u PRIMARY_DATABASE_URL RAILS_ENV=test bin/rails db:prepare
-env -u DATABASE_URL -u DATABASE_PATH -u PRIMARY_DATABASE_URL bin/rails console --environment=test --sandbox
+bin/check
 ```
 
-```ruby
-suffix = SecureRandom.hex(8)
-query_client = Client.create!(name: "Avery Provider Query Example", email: "avery-providers-#{suffix}@example.test")
-other_client = Client.create!(name: "Blair Provider Query Example", email: "blair-providers-#{suffix}@example.test")
-empty_client = Client.create!(name: "Casey Provider Query Example", email: "casey-providers-#{suffix}@example.test")
-first_provider = Provider.create!(name: "Morgan Provider Query Example", email: "morgan-providers-#{suffix}@example.test")
-shared_provider = Provider.create!(name: "Taylor Provider Query Example", email: "taylor-providers-#{suffix}@example.test")
-unrelated_provider = Provider.create!(name: "Jordan Provider Query Example", email: "jordan-providers-#{suffix}@example.test")
+This forces `RAILS_ENV=test`, clears database connection overrides and stale
+coverage, prepares `db/test.sqlite3`, then runs RuboCop, RSpec, strict Cucumber,
+fresh **100% line and 100% branch coverage** across all app/lib Ruby files, and
+`bundler-audit check --update` with current advisory data. Internet access is
+needed for the advisory update. Test cleanup uses isolated test data.
+Keep `Gemfile.lock` committed. Before a code commit, safely autocorrect owned
+Ruby files with `bundle exec rubocop --autocorrect <paths>`, then rerun `bin/check`.
+Follow [AGENTS.md](AGENTS.md) and [.docs/agent-workflow.md](.docs/agent-workflow.md)
+when extending behavior.
 
-query_client.provider_client_relationships.create!(provider: first_provider, plan: "basic")
-query_client.provider_client_relationships.create!(provider: shared_provider, plan: "premium")
-other_client.provider_client_relationships.create!(provider: shared_provider, plan: "basic")
-other_client.provider_client_relationships.create!(provider: unrelated_provider, plan: "premium")
+To rehearse setup and the console examples without changing development data,
+use a fresh local database in another terminal (macOS/Linux):
 
-all_providers = query_client.providers
-all_providers.order(:name, :id).pluck(:name)
-# => ["Morgan Provider Query Example", "Taylor Provider Query Example"]
-
-all_providers.where(id: [shared_provider.id, unrelated_provider.id]).order(:name, :id).pluck(:name)
-# => ["Taylor Provider Query Example"]
-
-empty_client.providers.where(id: shared_provider.id).order(:name, :id).to_a
-# => []
+```sh
+export RAILS_ENV=development
+unset DATABASE_URL PRIMARY_DATABASE_URL
+export DATABASE_PATH="$(mktemp -d)/journal.sqlite3"
+bundle install
+bin/rails db:prepare
+bin/rails db:seed
+bin/rails console
+# Paste the query block above, then exit.
+bin/rails server -b 127.0.0.1 -p 4000
+# Check /health, then stop with Ctrl-C.
+unset DATABASE_PATH
 ```
 
-To retrieve a client's journal history, use `client.journal_entries.recent_first`.
-It returns a composable Active Record relation ordered by `created_at DESC, id
-DESC`. Equal timestamps put the entry with the higher ID first. Filtering and
-limiting stay in SQL and retain the client boundary; a client with no entries
-returns an empty relation.
+The temporary database contains only synthetic records. `bin/check` always
+selects its separate test database, even from this terminal.
 
-Run this independent example in the test sandbox console shown above:
-
-```ruby
-suffix = SecureRandom.hex(8)
-history_client = Client.create!(name: "Avery History Example", email: "avery-history-#{suffix}@example.test")
-other_client = Client.create!(name: "Blair History Example", email: "blair-history-#{suffix}@example.test")
-empty_client = Client.create!(name: "Casey History Example", email: "casey-history-#{suffix}@example.test")
-timestamp = Time.utc(2026, 1, 15, 12)
-content = "Synthetic journal content for demonstrating ordered client history."
-
-newer = history_client.journal_entries.create!(content: content, created_at: timestamp)
-older = history_client.journal_entries.create!(content: content, created_at: timestamp - 1.day)
-tied = history_client.journal_entries.create!(content: content, created_at: timestamp)
-unrelated = other_client.journal_entries.create!(content: content, created_at: timestamp + 1.day)
-
-history = history_client.journal_entries.recent_first
-history.pluck(:id)
-# => [tied.id, newer.id, older.id]
-
-history.where(id: [older.id, tied.id, unrelated.id]).limit(1).pluck(:id)
-# => [tied.id]
-
-empty_client.journal_entries.recent_first.to_a
-# => []
-```
-
-The existing `(client_id, created_at, id)` journal index supports this scoped
-ordering, including reverse traversal for descending history. Large histories
-can use SQL filters and limits without loading every entry; inspect query plans
-before adding indexes for further access patterns.
-
-To retrieve journal entries across a provider's clients, use
-`provider.journal_entries.recent_first`. It returns a composable Active Record
-relation with global `created_at DESC, id DESC` ordering across both plans.
-Shared clients appear once, unrelated clients remain outside the query, and
-providers with no clients or no client entries return an empty relation.
-Provider membership scopes data; it does not establish authorization.
-
-Run this independent example in the test sandbox console shown above:
-
-```ruby
-suffix = SecureRandom.hex(8)
-history_provider = Provider.create!(name: "Morgan History Example", email: "morgan-history-#{suffix}@example.test")
-other_provider = Provider.create!(name: "Taylor History Example", email: "taylor-history-#{suffix}@example.test")
-empty_provider = Provider.create!(name: "Jordan History Example", email: "jordan-history-#{suffix}@example.test")
-first_client = Client.create!(name: "Avery History Example", email: "avery-provider-history-#{suffix}@example.test")
-shared_client = Client.create!(name: "Blair History Example", email: "blair-provider-history-#{suffix}@example.test")
-unrelated_client = Client.create!(name: "Casey History Example", email: "casey-provider-history-#{suffix}@example.test")
-
-history_provider.provider_client_relationships.create!(client: first_client, plan: "basic")
-history_provider.provider_client_relationships.create!(client: shared_client, plan: "premium")
-other_provider.provider_client_relationships.create!(client: shared_client, plan: "basic")
-other_provider.provider_client_relationships.create!(client: unrelated_client, plan: "premium")
-
-timestamp = Time.utc(2026, 1, 15, 12)
-content = "Synthetic journal content for demonstrating ordered provider history."
-newer = first_client.journal_entries.create!(content: content, created_at: timestamp)
-older = shared_client.journal_entries.create!(content: content, created_at: timestamp - 1.day)
-tied = shared_client.journal_entries.create!(content: content, created_at: timestamp)
-unrelated = unrelated_client.journal_entries.create!(content: content, created_at: timestamp + 1.day)
-
-history = history_provider.journal_entries.recent_first
-history.pluck(:id)
-# => [tied.id, newer.id, older.id]
-
-history.where(id: [older.id, tied.id, unrelated.id]).limit(1).pluck(:id)
-# => [tied.id]
-
-empty_provider.journal_entries.recent_first.to_a
-# => []
-```
-
-The association joins through clients and provider-client relationships in SQL;
-it does not load a client ID array or run a query for each client. The unique
-`(provider_id, client_id)` relationship index supports membership lookup and
-prevents duplicate pairs, so sharing a client with another provider does not
-duplicate entries. The `(client_id, created_at, id)` journal index supports
-finding each client's entries. The existing `(created_at, id)` journal index
-also offers a global ordered scan, with provider membership then filtered by
-the joins. The database chooses its plan based on selectivity; ordering the
-combined history may still require a sort across clients. Use SQL filters and
-limits and inspect query plans as data grows before adding indexes.
-
-The unique relationship index on `(provider_id, client_id)` supports finding a
-provider's clients and prevents duplicate pairs. Its leading `provider_id`
-column makes a separate provider-only index redundant; the `client_id` index
-supports the reverse query. For larger datasets, inspect query plans before
-adding indexes for particular filters or ordering: each additional index uses
-storage and adds work to writes.
-
-Both models inherit from `ApplicationRecord` and use ordinary Active Record
-persistence. Name and email are required, nonblank strings backed by database
-`NOT NULL` constraints. Emails must match `URI::MailTo::EMAIL_REGEXP` and are
-unique ignoring case within each model, enforced by model validation and a
-database unique index on `lower(email)`. Names can repeat, and a provider and
-client may share an email. Email spelling is preserved; syntax validation does
-not verify delivery or ownership. Tables use Rails primary keys and non-null `created_at` and
-`updated_at` timestamps. Both models expose `provider_client_relationships` and
-their opposite records through that association, returning composable Active
-Record relations. Each pair has one relationship: model validation gives a
-useful rejection and a unique database index protects concurrent writes.
-Relationships require existing providers and clients and accept exactly
-`basic` or `premium`; a client's plan belongs to the relationship, so it can
-differ between providers. See [.docs/database.md](.docs/database.md) for schema
-choices.
-
-Journal entries require an existing client and nonblank `content` of at least
-50 characters. The minimum follows the assignment; presence validation also
-rejects whitespace-only entries. Text uses a database `text` column, with no
-maximum length or automatic stripping, formatting, or normalization. Multiple
-entries per client are allowed. Client foreign keys and non-null content protect
-database integrity; the minimum length is enforced by model validation, which
-bulk writes bypass. Journal content, names, and emails are filtered from Rails
-request and Active Record attribute logging. No journal HTTP interface is added.
-
-The person-constraint migration checks existing records first and stops if
-names/emails are missing or blank, emails are malformed, or emails repeat
-ignoring case within a table. Correct those records deliberately before retrying
-`bin/rails db:prepare`; the migration does not fill, rewrite, or delete them.
-See [.docs/database.md](.docs/database.md) for rollout and rollback behavior.
-
-`GET /` deliberately returns HTTP 204 with no body. `GET /health` and `GET /up`
-return HTTP 200 with `{"status":"ok"}` when the database is reachable. Production
-uses `SECRET_KEY_BASE`, `DATABASE_PATH=/data/app.db` and `PORT=4000`. SQLite WAL is
-replicated by Litestream. Deploy migrations run `bundle exec rails db:prepare`
-before the healthy blue/green container receives traffic. Keep migrations
-compatible with the previous release; image rollback does not undo migrations.
-
-No Solid Queue, Solid Cache or Solid Cable services/databases are configured.
-Add background jobs or extra databases deliberately, with corresponding
-deployment and backup changes. See `AGENTS.md` and `.docs/`.
-
-The generated Notes interface, models, services and routes have been retired.
-The original creation migration is removed. The cleanup migration drops legacy
-`notes` and `audit_logs` tables and their data when `db:prepare` runs, including
-production deployment. This removal is explicitly authorized; fresh databases
-do not create these tables. The migration cannot restore deleted data, and older
-Notes-enabled application images are incompatible with the resulting schema.
-See [.docs/database.md](.docs/database.md) for rollout and rollback details.
-
-`bin/check` prepares the test database, runs RuboCop, RSpec and strict Cucumber,
-then enforces 100% line and branch coverage across all application and library
-Ruby files before checking current dependency advisories with bundler-audit.
-Deployment regression specs require the Docker CLI with its Compose plugin;
-they validate configuration without a running Docker daemon.
-Coverage results are cleared first; both suites must produce fresh results.
-Keep Gemfile.lock committed. Before committing, run safe RuboCop autocorrection
-on files you own, then rerun bin/check. Do not disable checks to pass.
+The requested data-model foundation is complete. Authentication, authorization,
+a journal HTTP/UI workflow and pagination are not implemented. Request and
+Active Record attribute logging filter names, emails and journal content;
+keep new logs free of personal data and journal text. Production deployment,
+backups and migration/rollback details live in
+[.docs/deployment.md](.docs/deployment.md) and [.docs/database.md](.docs/database.md).
