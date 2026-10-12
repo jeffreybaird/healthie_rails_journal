@@ -80,6 +80,29 @@ database creates both tables; repeating migration preparation preserves records.
 Rolling back either creation migration drops that table and its data, so an
 application image rollback should normally leave the additive schema in place.
 
+## Client journal entries
+
+`journal_entries` stores non-null `client_id` and freeform `content` in a text
+column, plus non-null Rails timestamps. Each entry belongs to one existing
+client; a client can have multiple entries. The model requires nonblank content
+of at least 50 characters, as specified by the assignment. There is no maximum
+length or input normalization. Length and blank-string validation belong to the
+model; database constraints reject NULL content and missing client references
+even when validations are bypassed.
+
+A composite index on `(client_id, created_at, id)` supports client-specific
+history ordered by `created_at DESC, id DESC`, including stable timestamp ties.
+SQLite can scan it in reverse for that order. Its leading column also supports
+the client association and foreign-key lookup, avoiding a redundant client-only
+index. A separate `(created_at, id)` index supports date ordering across clients.
+Ordered retrieval APIs are a separate task.
+
+The migration is additive and reversible, preserving existing client/provider
+records and relationships. Rollback drops journal entries and their contents;
+an application image rollback should normally leave this additive table intact.
+The foreign key prevents deleting a client with entries; no cascading deletion
+or automatic content cleanup is introduced without a requirement.
+
 ## Retired example data
 
 The generated Notes runtime and original creation migration

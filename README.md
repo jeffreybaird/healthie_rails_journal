@@ -3,8 +3,9 @@
 A Rails foundation for the provider/client/journal assignment, using Active
 Record, SQLite and Puma. `Provider` and `Client` each store a name, email address,
 and Rails timestamps. `ProviderClientRelationship` connects them and stores a
-client's `basic` or `premium` plan with each provider. Journal entries, journal
-queries, and sample seed data are not implemented yet.
+client's `basic` or `premium` plan with each provider. `JournalEntry` stores each
+client's freeform journal text. Ordered journal queries and sample seed data are
+not implemented yet.
 
 ```sh
 bundle install
@@ -33,6 +34,14 @@ second_provider = Provider.create!(name: "Taylor Example", email: "taylor@exampl
 second_provider.provider_client_relationships.create!(client: client, plan: "premium")
 client.provider_client_relationships.pluck(:provider_id, :plan)
 # => the two provider IDs with "basic" and "premium", respectively
+
+entry = client.journal_entries.create!(
+  content: "A synthetic journal entry for this example.\nA second line is preserved exactly."
+)
+entry.reload.content
+# => "A synthetic journal entry for this example.\nA second line is preserved exactly."
+client.journal_entries
+# => relation containing the client's entries
 ```
 
 Both models inherit from `ApplicationRecord` and use ordinary Active Record
@@ -50,6 +59,15 @@ Relationships require existing providers and clients and accept exactly
 `basic` or `premium`; a client's plan belongs to the relationship, so it can
 differ between providers. See [.docs/database.md](.docs/database.md) for schema
 choices.
+
+Journal entries require an existing client and nonblank `content` of at least
+50 characters. The minimum follows the assignment; presence validation also
+rejects whitespace-only entries. Text uses a database `text` column, with no
+maximum length or automatic stripping, formatting, or normalization. Multiple
+entries per client are allowed. Client foreign keys and non-null content protect
+database integrity; the minimum length is enforced by model validation, which
+bulk writes bypass. Journal content, names, and emails are filtered from Rails
+request and Active Record attribute logging. No journal HTTP interface is added.
 
 The person-constraint migration checks existing records first and stops if
 names/emails are missing or blank, emails are malformed, or emails repeat
