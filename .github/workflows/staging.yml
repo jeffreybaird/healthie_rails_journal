@@ -7,15 +7,16 @@
 # separate destroy job on `closed`.
 #
 # The Rails path is SQLite-only, so this workflow has no Postgres branch. The
-# environment's isolation from production comes from three things:
+# environment's isolation from production comes from two things:
 #
 #   * its own compose project (<slug>-stg) — its own containers and its own
 #     app_data volume, so its database is a different file on a different volume
 #   * litestream.staging.yml, which replicates into that volume instead of Spaces
-#   * compose.override.yaml, which switches off the archive-to-Spaces loop
 #
-# Between them the environment holds no Spaces credentials at all, and cannot
+# Together the environment holds no Spaces credentials at all, and cannot
 # write into the prefixes production restores from.
+# The neutral compose.override.yaml replaces stale overlays; the Rails base
+# has no periodic archive service to disable.
 #
 # ONE ENVIRONMENT PER APP, not one per PR: there is a single staging name, so
 # there is a single slot. The most recent PR to deploy holds it, recorded in
@@ -250,10 +251,9 @@ jobs:
           fi
           ssh_do "mkdir -p '$STACK_DIR' && printf '%s\n' '$PR' > '$STACK_DIR/.staging-owner'"
 
-      # compose.staging.yaml lands as compose.override.yaml, which Docker Compose
-      # merges automatically — that is how swap.sh and the migration runner get
-      # the staging behaviour without knowing staging exists. litestream.staging.yml
-      # lands under the name the compose file mounts.
+      # The neutral compose.staging.yaml replaces stale compose.override.yaml
+      # files. litestream.staging.yml lands as litestream.yml under the name
+      # the base Compose file mounts, keeping replicas inside the staging volume.
       - name: Copy stack files + .env to droplet
         run: |
           bash deploy/ci/remote.sh upload-stack sqlite staging

@@ -34,6 +34,8 @@ See [.docs/database.md](.docs/database.md) for rollout and rollback details.
 `bin/check` prepares the test database, runs RuboCop, RSpec and strict Cucumber,
 then enforces 100% line and branch coverage across all application and library
 Ruby files before checking current dependency advisories with bundler-audit.
+Deployment regression specs require the Docker CLI with its Compose plugin;
+they validate configuration without a running Docker daemon.
 Coverage results are cleared first; both suites must produce fresh results.
 Keep Gemfile.lock committed. Before committing, run safe RuboCop autocorrection
 on files you own, then rerun bin/check. Do not disable checks to pass.
