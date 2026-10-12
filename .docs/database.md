@@ -22,6 +22,24 @@ image may still run. Use additive, backward-compatible changes and staged
 backfills. SQLite table rebuilds can lock writes; test realistic migration size.
 Image rollback does not undo schema changes or already-applied migrations.
 
+## Provider and client foundation
+
+`providers` and `clients` each contain a Rails primary key, nullable string
+columns `name` and `email`, and non-null Rails `created_at` and `updated_at`
+timestamps. `Provider` and `Client` inherit directly from `ApplicationRecord`.
+Active Record fills timestamps during ordinary persistence.
+
+Issue #2 requires storage without defining presence, email format, length, or
+uniqueness rules. Both models therefore accept absent and blank values and
+duplicate email addresses. No extra validations, constraints, or indexes are
+introduced without a stated requirement. Provider/client relationships and
+plans belong to the next issue.
+
+The creation migrations are additive and reversible. Applying them to a fresh
+database creates both tables; repeating migration preparation preserves records.
+Rolling back either creation migration drops that table and its data, so an
+application image rollback should normally leave the additive schema in place.
+
 ## Retired example data
 
 The generated Notes runtime and original creation migration
