@@ -28,7 +28,7 @@ An existing app needs Gemfile, .ruby-version, config/application.rb,
 config/environment.rb, config/database.yml, config/puma.rb and config.ru.
 Generation preserves its application source. Bootstrap refreshes Dockerfile,
 .dockerignore, scripts and workflows, so review custom build requirements.
-Ruby assets:precompile runs when available; no Node package manager is installed.
+Ruby assets:precompile runs when available.
 Managed guide updates are an explicit lifecycle operation, not source migration.
 
 GitHub staging has separate data/backup configuration but shares the host and

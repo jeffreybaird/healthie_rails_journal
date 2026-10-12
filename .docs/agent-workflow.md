@@ -33,12 +33,14 @@ tool and user rules when selecting context or delegating.
 
 For example, an implementation handoff can be:
 
-> Behavior: reject an expired token, accept a valid token. Own `src/tokens.py`;
-> do not edit tests. Guidance: `.docs/project-guidance.md` and this workflow.
-> Accepted tests: `test/test_tokens.py`, SHA-256 recorded in
-> `/tmp/token-change/accepted.sha256`. Validate: `python3 -m unittest
-> discover -s test`. Red evidence: `/tmp/token-change/red.log`; save green
-> evidence to `/tmp/token-change/green.log`. Report completion, blockers, or
+> Behavior: reject an invalid plan, accept a valid plan. Own
+> `app/models/provider_client_relationship.rb`; do not edit tests. Guidance:
+> `.docs/project-guidance.md` and this workflow. Accepted tests:
+> `spec/models/provider_client_relationship_spec.rb`, SHA-256 recorded in
+> `/tmp/plan-change/accepted.sha256`. Validate: `bundle exec rspec
+> spec/models/provider_client_relationship_spec.rb`. Red evidence:
+> `/tmp/plan-change/red.log`; save green evidence to `/tmp/plan-change/green.log`.
+> Report completion, blockers, or
 > material findings with evidence paths.
 
 Return only completion, blockers, and material findings to the coordinator;
@@ -57,30 +59,26 @@ status chatter or reduce the saved evidence.
 
 ## Pull request test evidence
 
-Every PR description must include relevant Ruby Cucumber or Elixir Cucumberex
-feature/scenario specifications for its changes. Identify feature paths and
-scenario names, and include readable Gherkin, scenario/spec content, or actual
+Every PR description must include relevant Ruby Cucumber feature/scenario
+specifications for its changes. Identify feature paths and scenario names, and
+include readable Gherkin, scenario/spec content, or actual
 executed scenario output. Names or links alone are insufficient; a generic
 test-passed summary does not show the behavior covered.
 
 For Ruby, run `bundle exec rspec <relevant spec paths> --format documentation`
 and include the actual command, documentation output and results. Cucumber
 scenario output comes from `bundle exec cucumber --format pretty --strict`.
-For Elixir, run `mix test <relevant test paths> --trace` for focused ExUnit output
-and `MIX_ENV=test mix cucumber --format pretty --strict` for Cucumberex output.
 Use paths relevant to the included changes. Report failures, skipped and pending
 examples honestly. Never fabricate output or claim an unrun check passed. Long
 output may use expandable details blocks while keeping the result visible.
 
 Use `N/A` with an explicit reason for unrelated ecosystems or changes, and
 include the actual relevant checks instead. Mandatory tooling missing from a
-fresh generated project is a defect, not N/A. Fresh Rails and Sinatra projects
-require RSpec and Cucumber; fresh Phoenix, escript and Mix library projects
-require ExUnit and Cucumberex. Do not install an unrelated framework solely to
-produce PR evidence. Existing applications retain their explicit legacy gates
+fresh generated project is a defect, not N/A. Fresh Rails projects require RSpec
+and Cucumber. Existing applications retain their explicit legacy gates
 until their acceptance tooling is adopted; report that limitation honestly.
 Focused evidence does not replace required full quality gates: retain normal
-full RSpec or `mix test` execution and record all required commands and results.
+full RSpec execution and record all required commands and results.
 
 ## Dead-code review
 
@@ -111,30 +109,6 @@ affected test suite after cleanup. Do not claim green tests or commit cleanup
 that leaves tests failing; do not commit incomplete cleanup. The PR description
 must record the removed code and tests, or state that no dead code was found.
 Record any test-removal patch still awaiting user approval or blocked by hooks.
-
-## Elixir doctests
-
-For Elixir projects, doctests must demonstrate meaningful use of the function with
-representative valid inputs and assert its intended result. Include at least one
-happy-path example; nil, empty-input, fallback, or error examples alone are
-insufficient. For predicates, include an input that satisfies the predicate. For
-time-dependent predicates, show valid inputs on both sides of the time condition,
-using a stable clock or generous relative offsets to avoid brittle date-dependent
-examples. Keep useful edge cases as additional examples, not substitutes for the
-happy path.
-
-Inventory `@doc` and `@moduledoc` `iex>` examples across the project. Ensure every
-module containing doctests is registered with `doctest` in ExUnit. Run all doctests
-through the normal `mix test` suite, including CI; do not leave registrations
-skipped, excluded, filtered out, or confined to a separate command. Verify actual
-execution of all doctests in the normal suite; registration alone is insufficient.
-
-Verify the module is registered with `doctest` in an ExUnit test and run those
-tests. An `iex>` block alone does not make an example execute. Review examples
-by asking whether an implementation that always returns the fallback value would
-still pass; if so, add an example exercising the intended behavior. Follow project
-rules for functions requiring database or external-service setup; cover their
-successful behavior with appropriate tests rather than token fallback doctests.
 
 ## Security advisory review
 
@@ -169,9 +143,8 @@ logical change into commits that leave broken intermediate states.
 
 ## Precommit corrections
 
-For Elixir projects, run `mix format --force` before the remaining precommit
-checks. For Ruby projects using RuboCop, run `bundle exec rubocop --autocorrect`
-first, then recheck the corrected result. Correctable offenses are not a reason
+For Ruby projects using RuboCop, run `bundle exec rubocop --autocorrect` first,
+then recheck the corrected result. Correctable offenses are not a reason
 to stop before attempting safe autocorrection; unresolved lint offenses block the
 commit. Do not use `--autocorrect-all`, disable cops, or weaken lint rules to pass.
 Other required test, audit, and verification failures still block completion.
@@ -198,56 +171,10 @@ alias that performs corrections; source and test owners complete corrections fir
 Tests take precedence when a path matches both lists. Repository-relative source
 patterns identify code extensions and named build files, rather than every file
 in a source directory. The policy copies live at `.codex/hooks/policy.json` and
-`.claude/hooks/policy.json`:
-
-```json
-{
-  "schema_version": 2,
-  "source_globs": [
-    "*.sh",
-    "**/*.sh",
-    "*.py",
-    "**/*.py",
-    ".github/workflows/*.yml",
-    ".gitea/workflows/*.yml",
-    "*.rb",
-    "**/*.rb",
-    "*.erb",
-    "**/*.erb",
-    "*.js",
-    "**/*.js",
-    "*.css",
-    "**/*.css",
-    "Gemfile",
-    "Rakefile",
-    "*.gemspec",
-    "bin/*",
-    "config.ru",
-    "Dockerfile",
-    "config/*.yml",
-    "config/**/*.yml"
-  ],
-  "test_globs": [
-    "test/**",
-    "tests/**",
-    "spec/**",
-    "**/*_test.py",
-    "**/*_test.exs",
-    "**/*_spec.rb",
-    "**/*.test.ts",
-    "**/*.spec.ts",
-    "**/*.test.js",
-    "**/*.spec.js",
-    "**/*.test.tsx",
-    "**/*.spec.tsx",
-    "**/*.test.jsx",
-    "**/*.spec.jsx",
-    "features/**",
-    "support/coverage.rb",
-    "script/coverage.rb"
-  ]
-}
-```
+`.claude/hooks/policy.json`. Read those files for the complete enforced patterns.
+For this Rails application, source includes Ruby and ERB files, Gemfile, Rakefile,
+gemspecs, Rails configuration and executable entry points. Tests include `spec/`,
+`test/`, `features/`, Ruby spec files and the coverage support scripts.
 
 There is no additional enforcement-file exception. Agent instructions, hook
 configuration, data, docs and artifacts are not automatically classified as

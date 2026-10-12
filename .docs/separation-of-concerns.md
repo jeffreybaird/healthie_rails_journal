@@ -24,7 +24,6 @@ input, 404 for missing content and 303 after a successful form mutation.
 Prefer explicit arguments for tenant/actor scope. `ActiveSupport::CurrentAttributes`
 may hold correlation data after a real need emerges; Rails resets it at request
 boundaries, but jobs must establish their own context. It is not authorization.
-Do not copy Sinatra thread-local reset code into Rails.
 
 Keep transactions short. Write durable audit data atomically. Schedule optional
 observations only after all open transactions commit. See

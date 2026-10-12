@@ -12,7 +12,7 @@ exception message, path, credential, or other secret enters these records.
 Original raw stderr still reaches the hook's stderr destination.
 
 Categories identify nonzero exits, child startup failure, signal termination,
-Python traceback markers, and caught `workflow audit skipped` errors. Exception
+traceback markers, and caught `workflow audit skipped` errors. Exception
 class names are restricted to a fixed allowlist; unknown classes receive a generic
 category. The existing audit hook's successful exit after a caught exception
 remains successful. Its separate `.agent-audit/bash.jsonl` has different storage
@@ -27,9 +27,10 @@ therefore do not prove that hooks did not run.
 
 ## Limits and activation
 
-The wrapper cannot report its own startup failure, missing Python, or shell setup
-failure before Python starts. SIGKILL of the wrapper, host loss, and host timeouts
-can prevent a record; a host may kill the wrapper and child separately. SIGTERM
+The wrapper cannot report its own startup failure, a missing interpreter, or
+shell setup failure before the interpreter starts. SIGKILL of the wrapper, host
+loss, and host timeouts can prevent a record; a host may kill the wrapper and child
+separately. SIGTERM
 and SIGINT are forwarded to the active child. The wrapper is not a process-tree
 supervisor. A child killed while the wrapper survives can be recorded.
 

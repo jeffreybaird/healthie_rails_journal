@@ -46,5 +46,5 @@ and `total`. Clamp page to at least one and page size to 1–100. Use stable
 
 When introducing tenants, pass a resolved scope explicitly to operations;
 scoping determines visible records and policies determine permitted actions.
-See `multi-tenancy.md` and `rbac.md`. Feature flags, exports, jobs and caches
-are optional extensions, not generated services.
+Feature flags, exports, jobs and caches are optional extensions, not generated
+services.

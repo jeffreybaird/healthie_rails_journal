@@ -3,7 +3,7 @@
 Fresh scaffolds use RSpec for services and requests, Cucumber with Capybara's
 Rack Test driver for user behavior, SimpleCov for coverage, RuboCop with Rails
 and RSpec plugins for static analysis, and bundler-audit for dependency advisories.
-No browser or JavaScript runtime is required by the generated feature.
+No browser runtime is required by the generated feature.
 
 Run `bin/check`. It forces the test environment, clears inherited database
 connection overrides and stale coverage, prepares the database, then executes:

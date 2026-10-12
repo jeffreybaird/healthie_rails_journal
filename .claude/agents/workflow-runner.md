@@ -1,5 +1,6 @@
 ---
 name: workflow-runner
+model: sonnet
 description: "Record authoritative red and green test evidence. Do not edit source or tests."
 ---
 

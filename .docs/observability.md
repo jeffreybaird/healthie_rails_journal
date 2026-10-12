@@ -23,4 +23,4 @@ unbounded payloads. Configure endpoints and credentials at runtime.
 Test event identity, payload privacy and commit/rollback timing. A subscriber
 exception after commit must remain an exception; never pretend the persisted
 operation rolled back. For critical delivery use an atomic outbox and idempotent
-consumer. See `architecture-decisions.md` and `external-service-integration.md`.
+consumer. See `architecture-decisions.md`.
